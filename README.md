@@ -1,3 +1,5 @@
+# WORK IN PROGRESS
+
 # Athena Data Chatbot
 
 A production-grade, bank-security-level chatbot enabling business users to query several hundred Amazon Athena tables in natural language. Built on AWS AgentCore, LangGraph, and Cedar with defense-in-depth across authentication, authorization, content safety, and audit.
