@@ -1,0 +1,21 @@
+{
+  "version": "54.0.0",
+  "files": {
+    "33b034933b2d9ee327ddf4f10b54d7f32222b002eccd2dfcf53714f6d8cfe4f7": {
+      "displayName": "ChatbotNetworkingStack Template",
+      "source": {
+        "path": "ChatbotNetworkingStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "301112674226-eu-west-2-d4c839c3": {
+          "bucketName": "cdk-hnb659fds-assets-301112674226-eu-west-2",
+          "objectKey": "33b034933b2d9ee327ddf4f10b54d7f32222b002eccd2dfcf53714f6d8cfe4f7.json",
+          "region": "eu-west-2",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::301112674226:role/cdk-hnb659fds-file-publishing-role-301112674226-eu-west-2"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

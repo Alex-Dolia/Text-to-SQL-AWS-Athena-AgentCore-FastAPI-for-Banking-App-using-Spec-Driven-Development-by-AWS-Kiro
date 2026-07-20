@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kiro SDD Course — Build a Bank-Grade Athena Chatbot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --slate-900:#0f172a;--slate-800:#1e293b;--slate-700:#334155;--slate-600:#475569;
+  --slate-500:#64748b;--slate-400:#94a3b8;--slate-300:#cbd5e1;--slate-200:#e2e8f0;
+  --slate-100:#f1f5f9;--slate-50:#f8fafc;--white:#fff;
+  --amber-500:#f59e0b;--amber-400:#fbbf24;--amber-200:#fde68a;
+  --teal-500:#14b8a6;--teal-400:#2dd4bf;--green-500:#22c55e;--green-100:#dcfce7;
+  --red-500:#ef4444;--blue-500:#3b82f6;
+  --font-sans:'Inter',-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono','Fira Code',monospace;
+  --radius:4px;--shadow-sm:0 1px 2px rgba(15,23,42,0.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-sans);background:var(--slate-50);color:var(--slate-800);line-height:1.7;font-size:15px}
+::selection{background:var(--amber-200);color:var(--slate-900)}
+
+/* NAV SIDEBAR */
+nav.sidebar{position:fixed;top:0;left:0;width:280px;height:100vh;overflow-y:auto;background:var(--slate-900);color:var(--slate-300);padding:24px 0;z-index:100;border-right:1px solid var(--slate-700)}
+nav.sidebar::-webkit-scrollbar{width:5px}
+nav.sidebar::-webkit-scrollbar-thumb{background:var(--slate-600);border-radius:3px}
+.nav-brand{padding:0 20px 20px;border-bottom:1px solid var(--slate-700);margin-bottom:16px}
+.nav-brand .kicker{font-family:var(--font-mono);font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--amber-400)}
+.nav-brand h1{font-size:1rem;font-weight:700;color:var(--white);margin-top:6px;line-height:1.3}
+.nav-group{margin-bottom:4px}
+.nav-group-label{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--amber-500);padding:14px 20px 6px}
+nav.sidebar a{display:flex;align-items:center;gap:8px;padding:7px 20px 7px 24px;color:var(--slate-400);text-decoration:none;font-size:.82rem;border-left:2px solid transparent;transition:.12s}
+nav.sidebar a:hover{color:var(--white);background:rgba(255,255,255,.03)}
+nav.sidebar a.active{color:var(--white);border-left-color:var(--amber-400);background:rgba(251,191,36,.06)}
+.tier-badge{font-family:var(--font-mono);font-size:.58rem;font-weight:600;padding:1px 5px;border-radius:2px;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+.tier-badge.beg{background:var(--teal-400);color:var(--slate-900)}
+.tier-badge.int{background:var(--slate-300);color:var(--slate-900)}
+.tier-badge.adv{background:var(--amber-400);color:var(--slate-900)}
+
+/* MAIN */
+main{margin-left:280px;min-height:100vh}
+
+/* HERO */
+.hero{background:var(--slate-900);padding:80px 60px 60px;color:var(--white);border-bottom:3px solid var(--amber-500)}
+.hero .kicker{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;color:var(--amber-400);margin-bottom:14px}
+.hero h1{font-size:2.6rem;font-weight:700;line-height:1.1;max-width:720px;margin-bottom:18px}
+.hero h1 em{color:var(--amber-400);font-style:normal}
+.hero .lede{font-size:1.05rem;color:var(--slate-300);max-width:600px;line-height:1.6}
+.hero .meta-strip{display:flex;gap:24px;margin-top:28px;font-family:var(--font-mono);font-size:.7rem;color:var(--slate-400);text-transform:uppercase;letter-spacing:.06em}
+.hero .meta-strip span{color:var(--amber-400);font-weight:600}
+
+/* SECTIONS */
+section{padding:56px 60px;border-bottom:1px solid var(--slate-200);max-width:900px}
+.section-label{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--slate-500);margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.section-label::before{content:"";display:inline-block;width:20px;height:2px;background:var(--amber-500)}
+h2{font-size:1.75rem;font-weight:700;color:var(--slate-900);margin-bottom:16px;line-height:1.2}
+h3{font-size:1.2rem;font-weight:600;color:var(--slate-800);margin:30px 0 10px}
+h4{font-size:1rem;font-weight:600;color:var(--slate-700);margin:20px 0 8px}
+p{margin-bottom:14px;max-width:72ch}
+ul,ol{margin:0 0 16px;padding-left:20px}
+li{margin-bottom:6px;max-width:68ch}
+strong{color:var(--slate-900)}
+a{color:var(--slate-700);text-decoration:underline;text-decoration-color:var(--slate-300)}
+a:hover{color:var(--amber-500);text-decoration-color:var(--amber-500)}
+
+/* CODE */
+pre{background:var(--slate-900);color:var(--slate-200);font-family:var(--font-mono);font-size:.8rem;line-height:1.6;padding:18px 20px;border-radius:var(--radius);overflow-x:auto;margin:14px 0 20px;border:1px solid var(--slate-700)}
+code{font-family:var(--font-mono);font-size:.85em;background:var(--slate-200);padding:1px 5px;border-radius:2px}
+pre code{background:none;padding:0;font-size:1em}
+.kw{color:var(--amber-400)}.str{color:var(--teal-400)}.cm{color:var(--slate-500)}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse;margin:16px 0 22px;font-size:.88rem}
+th,td{text-align:left;padding:10px 14px;border:1px solid var(--slate-200);vertical-align:top}
+th{background:var(--slate-900);color:var(--amber-400);font-family:var(--font-mono);font-size:.68rem;letter-spacing:.05em;text-transform:uppercase}
+tr:nth-child(even) td{background:var(--white)}
+tr:nth-child(odd) td{background:var(--slate-50)}
+
+/* CALLOUTS */
+.callout{border-left:3px solid var(--amber-500);background:var(--white);padding:16px 20px;margin:18px 0;border-radius:0 var(--radius) var(--radius) 0;box-shadow:var(--shadow-sm)}
+.callout-label{font-family:var(--font-mono);font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:var(--amber-500);font-weight:600;margin-bottom:6px}
+.callout.warn{border-left-color:var(--red-500)}.callout.warn .callout-label{color:var(--red-500)}
+.callout.tip{border-left-color:var(--teal-500)}.callout.tip .callout-label{color:var(--teal-500)}
+
+/* PROMPT BOX */
+.prompt-box{background:var(--slate-100);border:1px dashed var(--slate-400);padding:18px 20px;border-radius:var(--radius);font-family:var(--font-mono);font-size:.82rem;color:var(--slate-700);margin:16px 0 22px;line-height:1.6;white-space:pre-wrap}
+.prompt-label{font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--amber-500);font-weight:600;margin-bottom:8px;font-family:var(--font-mono)}
+
+/* DIAGRAM */
+.diagram{background:var(--slate-900);color:var(--slate-200);font-family:var(--font-mono);font-size:.72rem;line-height:1.5;padding:22px 24px;border-radius:var(--radius);overflow-x:auto;white-space:pre;margin:16px 0 22px;border:1px solid var(--slate-700)}
+.diagram .hl{color:var(--amber-400)}
+.diagram .g{color:var(--teal-400)}
+
+/* BACK TO TOP */
+.back-top{position:fixed;bottom:24px;right:24px;background:var(--slate-900);color:var(--amber-400);font-family:var(--font-mono);font-size:.68rem;padding:10px 14px;border-radius:var(--radius);text-decoration:none;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--slate-700);opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+.back-top.show{opacity:1;pointer-events:auto}
+
+/* SKIP LINK (accessibility) */
+.skip-link{position:absolute;left:-999px;top:0;background:var(--amber-400);color:var(--slate-900);padding:10px 18px;z-index:200;font-family:var(--font-mono);font-size:.8rem;font-weight:600;text-decoration:none;border-radius:0 0 var(--radius) 0}
+.skip-link:focus{left:0}
+
+/* COPY BUTTON */
+.prompt-box{position:relative}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--slate-800);color:var(--amber-400);border:1px solid var(--slate-600);font-family:var(--font-mono);font-size:.62rem;padding:4px 9px;border-radius:2px;cursor:pointer;text-transform:uppercase;letter-spacing:.05em;transition:.12s}
+.copy-btn:hover{background:var(--slate-700)}
+.copy-btn:focus-visible{outline:2px solid var(--amber-400);outline-offset:1px}
+
+/* PROGRESS TRACKING */
+.nav-progress{font-family:var(--font-mono);font-size:.62rem;color:var(--slate-500);margin-top:8px;letter-spacing:.04em}
+nav.sidebar a{justify-content:space-between}
+.nav-link-text{display:flex;align-items:center;gap:8px}
+.progress-check{accent-color:var(--amber-400);cursor:pointer;flex-shrink:0;width:14px;height:14px}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:16px 0}
+.card{background:var(--white);border:1px solid var(--slate-200);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow-sm)}
+.card h4{margin-top:0}
+
+/* GLOSSARY */
+dfn{font-style:normal;border-bottom:1px dotted var(--slate-500);cursor:help;text-decoration:none}
+
+/* FOOTER + MOBILE */
+footer{padding:40px 60px;color:var(--slate-500);font-size:.82rem;border-top:1px solid var(--slate-200)}
+footer a{color:var(--amber-500)}
+.menu-toggle{display:none}
+@media(max-width:880px){
+  nav.sidebar{position:fixed;transform:translateX(-100%);transition:.2s;width:82vw;max-width:300px}
+  nav.sidebar.open{transform:translateX(0)}
+  main{margin-left:0}
+  .hero{padding:70px 24px 50px}.hero h1{font-size:2rem}
+  section{padding:44px 22px}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .menu-toggle{display:block;position:fixed;top:14px;left:14px;z-index:110;background:var(--slate-900);color:var(--amber-400);border:1px solid var(--slate-700);font-family:var(--font-mono);font-size:.72rem;padding:8px 12px;border-radius:var(--radius);cursor:pointer}
+  footer{padding:30px 22px}
+}
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to content</a>
+<button class="menu-toggle" onclick="document.querySelector('nav.sidebar').classList.toggle('open')">&#9776; CONTENTS</button>
+
+<nav class="sidebar">
+<div class="nav-brand">
+<div class="kicker">Field Manual &middot; Rev C</div>
+<h1>Kiro &amp; the Athena Chatbot</h1>
+<div class="nav-progress" id="navProgress">Progress: 0/24 sections</div>
+</div>
+<div class="nav-group"><div class="nav-group-label">Course</div>
+<a href="#roadmap"><span class="nav-link-text">Roadmap: Zero &rarr; Production</span></a></div>
+<div class="nav-group"><div class="nav-group-label">00 &middot; Foundation</div>
+<a href="#vibe-spec"><span class="nav-link-text"><span class="tier-badge beg">B</span> What is Kiro &amp; SDD</span><input type="checkbox" class="progress-check" data-section="vibe-spec" aria-label="Mark section complete"></a>
+<a href="#install"><span class="nav-link-text"><span class="tier-badge beg">B</span> Install &amp; first project</span><input type="checkbox" class="progress-check" data-section="install" aria-label="Mark section complete"></a>
+<a href="#ears"><span class="nav-link-text"><span class="tier-badge beg">B</span> EARS notation</span><input type="checkbox" class="progress-check" data-section="ears" aria-label="Mark section complete"></a>
+<a href="#glossary"><span class="nav-link-text"><span class="tier-badge beg">B</span> Acronym glossary</span><input type="checkbox" class="progress-check" data-section="glossary" aria-label="Mark section complete"></a>
+<a href="#spec-formats"><span class="nav-link-text"><span class="tier-badge beg">B</span> Spec file formats &amp; citations</span><input type="checkbox" class="progress-check" data-section="spec-formats" aria-label="Mark section complete"></a>
+<a href="#workflows"><span class="nav-link-text"><span class="tier-badge beg">B</span> Generate spec files (step-by-step)</span><input type="checkbox" class="progress-check" data-section="workflows" aria-label="Mark section complete"></a>
+<a href="#getting-started-spec"><span class="nav-link-text"><span class="tier-badge beg">B</span> Getting Started (full walkthrough)</span><input type="checkbox" class="progress-check" data-section="getting-started-spec" aria-label="Mark section complete"></a></div>
+<div class="nav-group"><div class="nav-group-label">01 &middot; Intermediate</div>
+<a href="#design-review"><span class="nav-link-text"><span class="tier-badge int">I</span> Reviewing design.md</span><input type="checkbox" class="progress-check" data-section="design-review" aria-label="Mark section complete"></a>
+<a href="#tasks-waves"><span class="nav-link-text"><span class="tier-badge int">I</span> Tasks &amp; waves</span><input type="checkbox" class="progress-check" data-section="tasks-waves" aria-label="Mark section complete"></a>
+<a href="#steering"><span class="nav-link-text"><span class="tier-badge int">I</span> Steering files</span><input type="checkbox" class="progress-check" data-section="steering" aria-label="Mark section complete"></a>
+<a href="#hooks"><span class="nav-link-text"><span class="tier-badge int">I</span> Agent hooks</span><input type="checkbox" class="progress-check" data-section="hooks" aria-label="Mark section complete"></a>
+<a href="#mcp"><span class="nav-link-text"><span class="tier-badge int">I</span> MCP servers</span><input type="checkbox" class="progress-check" data-section="mcp" aria-label="Mark section complete"></a>
+<a href="#antipatterns"><span class="nav-link-text"><span class="tier-badge int">I</span> Anti-patterns</span><input type="checkbox" class="progress-check" data-section="antipatterns" aria-label="Mark section complete"></a></div>
+<div class="nav-group"><div class="nav-group-label">02 &middot; Advanced Build</div>
+<a href="#architecture"><span class="nav-link-text"><span class="tier-badge adv">A</span> Full architecture</span><input type="checkbox" class="progress-check" data-section="architecture" aria-label="Mark section complete"></a>
+<a href="#two-layer"><span class="nav-link-text"><span class="tier-badge adv">A</span> Two-layer authorization</span><input type="checkbox" class="progress-check" data-section="two-layer" aria-label="Mark section complete"></a>
+<a href="#prompts"><span class="nav-link-text"><span class="tier-badge adv">A</span> Exact Kiro prompts</span><input type="checkbox" class="progress-check" data-section="prompts" aria-label="Mark section complete"></a>
+<a href="#subagents"><span class="nav-link-text"><span class="tier-badge adv">A</span> Custom subagents</span><input type="checkbox" class="progress-check" data-section="subagents" aria-label="Mark section complete"></a>
+<a href="#cost"><span class="nav-link-text"><span class="tier-badge adv">A</span> Cost trade-offs</span><input type="checkbox" class="progress-check" data-section="cost" aria-label="Mark section complete"></a>
+<a href="#mcp-decision"><span class="nav-link-text"><span class="tier-badge adv">A</span> MCP vs. direct integration</span><input type="checkbox" class="progress-check" data-section="mcp-decision" aria-label="Mark section complete"></a>
+<a href="#testing"><span class="nav-link-text"><span class="tier-badge adv">A</span> Unit &amp; integration testing</span><input type="checkbox" class="progress-check" data-section="testing" aria-label="Mark section complete"></a>
+<a href="#implementation"><span class="nav-link-text"><span class="tier-badge adv">A</span> Step-by-step build</span><input type="checkbox" class="progress-check" data-section="implementation" aria-label="Mark section complete"></a></div>
+<div class="nav-group"><div class="nav-group-label">03 &middot; Ship It</div>
+<a href="#mvp-prod"><span class="nav-link-text">MVP vs. Production</span><input type="checkbox" class="progress-check" data-section="mvp-prod" aria-label="Mark section complete"></a>
+<a href="#cheatsheet"><span class="nav-link-text">Cheat sheet</span><input type="checkbox" class="progress-check" data-section="cheatsheet" aria-label="Mark section complete"></a>
+<a href="#sources"><span class="nav-link-text">Sources</span><input type="checkbox" class="progress-check" data-section="sources" aria-label="Mark section complete"></a></div>
+</nav>
+
+<main id="main-content">
+<div class="hero">
+<div class="kicker">Spec-Driven Development &middot; Zero to Production</div>
+<h1>Use Kiro to Build a <em>Bank-Grade Chatbot</em> over Athena</h1>
+<p class="lede">A step-by-step course: install Kiro, create spec files (requirements &rarr; design &rarr; tasks), and let Kiro implement a production Python chatbot that queries Athena tables &mdash; using SDD with human approval gates at every phase.</p>
+<div class="meta-strip">
+<div>Level <span>Zero &rarr; Principal</span></div>
+<div>Date <span>July 2026</span></div>
+<div>Output <span>Production Python Project</span></div>
+<div>Stack <span>AgentCore + LangGraph + Cedar + Lake Formation</span></div>
+</div>
+</div>
+
+<section id="roadmap">
+<h2>Course Roadmap</h2>
+<p>This course follows the SDD workflow: plan first, Kiro builds second.</p>
+<table>
+<tr><th>Phase</th><th>Sections</th><th>What you learn</th><th>Output</th></tr>
+<tr><td><strong>Foundation</strong></td><td>00</td><td>SDD concepts, EARS, how to generate spec files</td><td>Kiro installed, workflow understood</td></tr>
+<tr><td><strong>Configure</strong></td><td>01</td><td>Steering, hooks, MCP servers</td><td>Security rules + automation in place</td></tr>
+<tr><td><strong>Build</strong></td><td>02</td><td>Architecture, auth, tests, implementation</td><td>Complete <code>chatbot/</code> Python project</td></tr>
+<tr><td><strong>Ship</strong></td><td>03</td><td>MVP scoping, governance, cheat sheet</td><td>Production-ready, approved system</td></tr>
+</table>
+</section>
+
+<section id="glossary">
+<span class="tier-badge beg">Beginner</span>
+<h2>Acronym Glossary</h2>
+<p>This course uses a number of acronyms before (or without) always spelling them out inline. Reference table below — hover any <dfn title="Definitions are also shown inline on first use throughout the course">underlined term</dfn> elsewhere in the course for a quick reminder.</p>
+<table>
+<tr><th>Term</th><th>Stands for</th><th>Where it's used</th></tr>
+<tr><td><strong>SDD</strong></td><td>Spec-Driven Development</td><td>The overall workflow this course teaches</td></tr>
+<tr><td><strong>EARS</strong></td><td>Easy Approach to Requirements Syntax</td><td>How <code>requirements.md</code> is written</td></tr>
+<tr><td><strong>STRIDE</strong></td><td>Spoofing, Tampering, Repudiation, Information disclosure, Denial of service, Elevation of privilege</td><td>Threat-modeling framework used in <code>design.md</code></td></tr>
+<tr><td><strong>ADR</strong></td><td>Architecture Decision Record</td><td>Design rationale captured in <code>design.md</code></td></tr>
+<tr><td><strong>OBO</strong></td><td>On-Behalf-Of (token exchange)</td><td>AgentCore Identity — queries run as the authenticated user, not a shared service role</td></tr>
+<tr><td><strong>CPM</strong></td><td>Critical Path Method</td><td>How <code>tasks.md</code> groups work into dependency-ordered waves</td></tr>
+<tr><td><strong>MCP</strong></td><td>Model Context Protocol</td><td>Tool-calling standard used both by Kiro (dev-time) and the chatbot's Gateway (runtime)</td></tr>
+</table>
+</section>
+
+<section id="vibe-spec">
+<div class="section-label">00 &mdash; Foundation</div>
+<span class="tier-badge beg">Beginner</span>
+<h2>Vibe vs Spec: Why SDD for a Bank Chatbot</h2>
+<p>Kiro offers two session types. This course uses <strong>Spec</strong> exclusively.</p>
+<div class="grid-2">
+<div class="card" style="border:2px solid var(--slate-400)"><h4>&#x1F4AC; Vibe</h4><p><strong>"Chat first, then build."</strong> Explore ideas, iterate. Great for prototypes.</p><p><em>Not used in this course.</em></p></div>
+<div class="card" style="border:2px solid var(--green-500);background:var(--green-100)"><h4>&#x1F4CB; Spec &larr; THIS COURSE</h4><p><strong>"Plan first, then build."</strong> Create requirements and design before coding. Required for regulated systems.</p></div>
+</div>
+<h3>The SDD Workflow (4 phases, 3 approval gates)</h3>
+<div class="diagram">REQUIREMENTS  <span class="g">&rarr;</span>  DESIGN  <span class="g">&rarr;</span>  TASKS  <span class="g">&rarr;</span>  IMPLEMENTATION
+ <span class="hl">(what)</span>          <span class="hl">(how)</span>       <span class="hl">(plan)</span>      <span class="hl">(code)</span>
+    |               |            |            |
+ <span class="g">[approve]</span>      <span class="g">[approve]</span>   <span class="g">[approve]</span>    <span class="g">[verify]</span></div>
+<p>No code is written until all three spec files are approved. <a href="https://kiro.dev/docs/specs/">Source: kiro.dev/docs/specs</a></p>
+<div class="callout tip"><div class="callout-label">Why SDD for NatWest?</div>A bank chatbot touching financial data needs formal requirements, a reviewed security architecture, and audit-ready decisions &mdash; before a line of code exists. Spec mode enforces this.</div>
+</section>
+
+<section id="install">
+<span class="tier-badge beg">Beginner</span>
+<h2>Install Kiro &amp; Start a Project</h2>
+<ol>
+<li>Download from <a href="https://kiro.dev">kiro.dev</a> (IDE or CLI)</li>
+<li>Sign in with corporate SSO (IAM Identity Center for banks)</li>
+<li>Create &amp; open project: <code>mkdir chatbot &amp;&amp; cd chatbot</code></li>
+<li><code>.kiro/</code> appears automatically on first use:</li>
+</ol>
+<pre><code>chatbot/
+&boxvr;&boxh;&boxh; .kiro/
+&boxv;   &boxvr;&boxh;&boxh; specs/       <span class="cm"># Feature specs (requirements, design, tasks)</span>
+&boxv;   &boxvr;&boxh;&boxh; steering/    <span class="cm"># Persistent project rules</span>
+&boxv;   &boxvr;&boxh;&boxh; hooks/       <span class="cm"># Automated triggers</span>
+&boxv;   &boxur;&boxh;&boxh; settings/    <span class="cm"># MCP server config</span></code></pre>
+<p><a href="https://kiro.dev/docs/getting-started/first-project/">Docs: Your first project</a></p>
+</section>
+
+<section id="ears">
+<span class="tier-badge beg">Beginner</span>
+<h2>EARS Notation: How Requirements Are Written</h2>
+<p>Kiro generates requirements in <strong>EARS</strong> (Easy Approach to Requirements Syntax) &mdash; every requirement is testable. <a href="https://en.wikipedia.org/wiki/Easy_Approach_to_Requirements_Syntax">[Wikipedia]</a></p>
+<pre><code><span class="kw">WHEN</span> a user submits a question
+<span class="kw">THE SYSTEM SHALL</span> perform semantic retrieval to identify the top-k tables
+
+<span class="kw">IF</span> the model cannot produce valid SQL after 2 retries
+<span class="kw">THEN THE SYSTEM SHALL</span> fail gracefully and inform the user</code></pre>
+<table>
+<tr><th>Pattern</th><th>Syntax</th><th>Use when</th></tr>
+<tr><td>Ubiquitous</td><td><code>THE SYSTEM SHALL [behavior]</code></td><td>Always true</td></tr>
+<tr><td>Event-driven</td><td><code>WHEN [event] THE SYSTEM SHALL [response]</code></td><td>Triggered by event</td></tr>
+<tr><td>Unwanted</td><td><code>IF [condition] THEN THE SYSTEM SHALL [response]</code></td><td>Error/edge cases</td></tr>
+</table>
+<p><a href="https://www.jamasoftware.com/requirements-management-guide/writing-requirements/adopting-the-ears-notation-to-improve-requirements-engineering/">Source: Jama Software &mdash; Adopting EARS</a></p>
+</section>
+
+<section id="spec-formats">
+<span class="tier-badge beg">Beginner</span>
+<h2>The Three Spec Files: What Kiro Generates</h2>
+<table>
+<tr><th>File</th><th>Methodology</th><th>Contains</th><th>Docs</th></tr>
+<tr><td><code>requirements.md</code></td><td>EARS (Mavin 2009)</td><td>User stories + testable acceptance criteria</td><td><a href="https://kiro.dev/docs/specs/feature-specs/requirements-first/">Link</a></td></tr>
+<tr><td><code>design.md</code></td><td><dfn title="Spoofing, Tampering, Repudiation, Information disclosure, Denial of service, Elevation of privilege">STRIDE</dfn> + <dfn title="Architecture Decision Record">ADRs</dfn></td><td>Architecture, diagrams, threat model, cost</td><td><a href="https://kiro.dev/docs/specs/feature-specs/tech-design-first/">Link</a></td></tr>
+<tr><td><code>tasks.md</code></td><td><dfn title="Critical Path Method">CPM</dfn> waves</td><td>Dependency-graphed implementation plan</td><td><a href="https://kiro.dev/docs/specs/">Link</a></td></tr>
+</table>
+<p>All stored in: <code>.kiro/specs/athena-chatbot/</code></p>
+</section>
+
+<section id="workflows">
+<span class="tier-badge beg">Beginner</span>
+<h2>How to Generate the Three Spec Files</h2>
+<p>In Kiro's sidebar, under <strong>SPECS</strong>, click <strong>"+ Create New Spec"</strong>. A text input appears at the top of the editor:</p>
+<pre><code><span class="cm">┌─────────────────────────────────────────────────────────────────────┐</span>
+<span class="cm">│</span> <span class="str">Enter your idea to generate requirement, design, and task specs.</span>  <span class="cm">│</span>
+<span class="cm">│</span>                                                                     <span class="cm">│</span>
+<span class="cm">│</span> Specs are a structured way to build features so you can plan       <span class="cm">│</span>
+<span class="cm">│</span> before building (Press 'Enter' to confirm or 'Escape' to cancel)   <span class="cm">│</span>
+<span class="cm">└─────────────────────────────────────────────────────────────────────┘</span></code></pre>
+<p>Paste your prompt into this input and press <strong>Enter</strong>. Kiro then generates all three spec files with approval gates between each phase:</p>
+<table>
+<tr><th>Step</th><th>You do</th><th>What happens</th></tr>
+<tr><td><strong>1</strong></td><td>Sidebar &rarr; SPECS &rarr; <strong>+ Create New Spec</strong></td><td>Text input appears at top of editor</td></tr>
+<tr><td><strong>2</strong></td><td>Paste your prompt (below) &rarr; press <strong>Enter</strong></td><td>Kiro generates <code>requirements.md</code></td></tr>
+<tr><td><strong>3</strong></td><td>Review requirements &rarr; <strong>Approve</strong></td><td>Kiro generates <code>design.md</code></td></tr>
+<tr><td><strong>4</strong></td><td>Review design &rarr; <strong>Approve</strong></td><td>Kiro generates <code>tasks.md</code></td></tr>
+<tr><td><strong>5</strong></td><td>Review tasks &rarr; <strong>Approve</strong></td><td>Spec complete &mdash; ready to implement</td></tr>
+</table>
+<h3>The prompt to paste into the spec input</h3>
+<div class="prompt-box"><div class="prompt-label">Paste this into "Enter your idea..." and press Enter</div><span class="prompt-text">Design a production chatbot for NatWest business users to query several hundred Athena tables in natural language. Project directory: chatbot/
+
+- Cognito federated to corporate IdP (SAML/OIDC, MFA, 15-min JWTs)
+- FastAPI (chatbot/api/) — thin auth layer, delegates to agent
+- LangGraph agent (chatbot/agent/) on AgentCore Runtime — explicit graph with disambiguation (max 3) and self-correction (max 2)
+- ALL tool calls through AgentCore Gateway + Policy (Cedar, default-deny, forbid-wins)
+- MCP server (chatbot/mcp_server/) — list_tables, get_schema, estimate_cost, run_query
+- AgentCore Identity OBO — queries run as authenticated user
+- Lake Formation at Athena engine (second independent auth layer)
+- Bedrock Guardrails (Standard) on every model call, input + output
+- Immutable audit trail (S3 Object Lock, 7-year)
+- Reconciliation job: alert + fail-closed if Cedar and Lake Formation diverge
+
+Structure: chatbot/{api,agent,mcp_server,policies,infra,tests,scripts}/ + pyproject.toml</span></div>
+<div class="callout"><div class="callout-label">After all 3 files are approved</div>Execute tasks: <code>#spec:athena-chatbot run all tasks in wave 1</code></div>
+</section>
+
+<section id="getting-started-spec">
+<span class="tier-badge beg">Beginner</span>
+<h2>Getting Started: Creating the Chatbot Feature Spec (Full Walkthrough)</h2>
+<p>This section maps the official Kiro "Getting Started" steps to the Athena chatbot, showing exactly what you click, what you type, what Kiro asks, and what it produces at each stage.</p>
+
+<h3>Overview of the Flow</h3>
+<div class="diagram"><span class="hl">Step 1</span>  Click <span class="g">+</span> under Specs (or choose Spec from chat pane)
+    &darr;
+<span class="hl">Step 2</span>  Provide initial prompt describing your chatbot idea
+    &darr;
+<span class="hl">Step 3</span>  Choose <span class="g">Feature</span> when Kiro asks your intent
+    &darr;
+<span class="hl">Step 4</span>  Choose workflow: <span class="g">Requirements-First</span> / <span class="g">Design-First</span> / Quick Plan
+    &darr;
+<span class="hl">Step 5</span>  Follow the workflow through each phase to implementation</div>
+
+<h3>Step 1 — Open the Spec Creation Dialog</h3>
+<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin:16px 0">
+<div style="flex:1;min-width:280px">
+<table>
+<tr><th>Action</th><th>Detail</th></tr>
+<tr><td><strong>Option A</strong></td><td>In the Kiro sidebar (left panel), find the <strong>SPECS</strong> section. Click <strong>+ Create New Spec</strong>.</td></tr>
+<tr><td><strong>Option B</strong></td><td>Open the Chat pane and choose <strong>Spec</strong> as the session type (not Vibe).</td></tr>
+</table>
+<div class="callout tip"><div class="callout-label">What you see</div>The Kiro sidebar shows four panels: <strong>SPECS</strong>, <strong>AGENT HOOKS</strong>, <strong>AGENT STEERING &amp; SKILLS</strong>, and <strong>MCP SERVERS</strong>. Click <em>+ Create New Spec</em> at the top. A dialog opens asking you to describe your project idea.</div>
+</div>
+<div style="flex:0 0 auto;text-align:center">
+<img src="images/kiro-sidebar-specs.png" alt="Kiro sidebar showing SPECS section with '+ Create New Spec' button, AGENT HOOKS, AGENT STEERING &amp; SKILLS, and MCP SERVERS panels" style="max-width:240px;border:1px solid var(--slate-700);border-radius:var(--radius);box-shadow:0 2px 8px rgba(0,0,0,0.15)">
+<p style="font-family:var(--font-mono);font-size:.65rem;color:var(--slate-500);margin-top:8px">Kiro sidebar &mdash; click "+ Create New Spec"</p>
+</div>
+</div>
+
+<h3>Step 2 — Provide Your Initial Prompt</h3>
+<p>This is the most critical step. A vague prompt produces vague specs. Below are three prompt options depending on your level of detail:</p>
+
+<h4>Option A: Minimal prompt (not recommended for regulated systems)</h4>
+<div class="prompt-box"><div class="prompt-label">Minimal — produces weak specs</div><span class="prompt-text">Build a chatbot that lets users query Athena tables using natural language.</span></div>
+
+<h4>Option B: Moderate prompt (acceptable for internal tools)</h4>
+<div class="prompt-box"><div class="prompt-label">Moderate — covers key concerns</div><span class="prompt-text">Build a Python chatbot for business users to query Athena tables in natural language.
+- Authentication via Cognito with corporate IdP
+- FastAPI backend with JWT validation
+- LangGraph agent with self-correction and disambiguation
+- MCP server with tools: list_tables, get_schema, run_query
+- Cedar policies for access control (default-deny)
+- Lake Formation for row/column-level security
+- Audit logging to S3
+
+Project structure: chatbot/{api,agent,mcp_server,policies,infra,tests}/</span></div>
+
+<h4>Option C: Bank-grade prompt (recommended for this course)</h4>
+<div class="prompt-box"><div class="prompt-label">Full — copy this for bank-grade output</div><span class="prompt-text">Design a production Security Architecture for a chatbot enabling business users at a Tier-1 bank to query several hundred Amazon Athena tables in natural language. Project directory: chatbot/
+
+Security Design Principles (every component choice must trace to at least one):
+- P1 Defense in depth: no single control is the sole barrier (two-layer auth, Guardrails at model AND gateway)
+- P2 Default-deny: access denied unless explicitly permitted (Cedar, PrivateLink, no "allow all" IAM)
+- P3 Least privilege: OBO tokens scoped per-user per-session; read-only workgroup; 15-min JWTs
+- P4 Separation of control planes: security decisions made outside the component they protect (Policy at Gateway, not inside agent; Lake Formation at Athena, not in app code)
+- P5 Deterministic over probabilistic: Cedar (formal, verifiable) for authorization; Guardrails (probabilistic) only for content safety
+- P6 Assume breach: reconciliation detects drift; audit log survives component failure; kill switch for immediate containment
+
+Authentication & Session:
+- Amazon Cognito federated to corporate IdP (SAML 2.0/OIDC, MFA enforced, 15-min access tokens, 8-hour refresh tokens)
+- Cognito maps IdP SAML assertions to custom claims: department, role, data-classification-tier, groups
+- FastAPI on ECS Fargate (chatbot/api/) — thin auth layer: JWT validation (RS256 signature, expiry, audience, issuer), rate limiting (30 req/min per user), circuit breaker (fail to 503), session timeout (45 min idle)
+- Internal ALB only (HTTPS 443, ACM cert) — no public internet path, security group allows inbound only from corporate CIDR
+- Lambda-backed IdP webhook for deprovisioning (RevokeToken within 5 min of IdP event)
+- No admin_initiate_auth in production — admins cannot impersonate users
+
+Agent & Orchestration:
+- LangGraph agent (chatbot/agent/) hosted on AgentCore Runtime via AgentCore Starter Toolkit — explicit graph with named nodes and conditional edges so a security architect can see every path
+- Why LangGraph (not Strands Agents, CrewAI, or Bedrock managed agent): explicit graph = auditable, bounded loops as first-class concept, conditional edges and cycles are native. Bedrock managed agent is a black box — cannot enforce bounded retries structurally or model disambiguation as an explicit branch
+- Agent graph nodes: intent_classify → glossary_resolve → schema_retrieve → disambiguate (conditional, max 3 rounds) → sql_generate → validate_sql → tool_call → self_correct (conditional, max 2 retries, structurally bounded in graph definition) → output_scan → format_respond
+- AgentCore Memory for per-user conversation state (session-scoped, no custom DynamoDB needed)
+- Schema retrieval via RAG over OpenSearch Serverless (VPC-only, vector type) containing embedded table/column metadata + business glossary terms + synonyms (Bedrock Titan Embeddings)
+- Re-index vector store within 1 hour of Glue Catalog changes (EventBridge-triggered pipeline)
+- Only authorized schemas (per Lake Formation grants for the authenticated user) included in retrieval context presented to LLM — prevents schema-level information leakage
+- AgentCore Runtime billing: no CPU charge during I/O wait (waiting for LLM/Athena), ~60-70% cheaper than equivalent Fargate for I/O-heavy agent workloads
+- Runtime profile: 1 vCPU, 2 GB memory, up to 8-hour sessions, managed auto-scaling
+
+Authorization (two architecturally independent layers):
+- ALL tool calls routed through AgentCore Gateway + AgentCore Policy (Cedar, default-deny, forbid-wins semantics)
+- Policy never sees the prompt — evaluates only structured metadata: principal (OAuth claims) × action (tool name) × resource (database/table). Cannot be bypassed by jailbroken prompts.
+- AgentCore Identity OBO token exchange — queries execute as the authenticated end user's federated identity, never a shared service role. Token vault keyed to (workload_identity, user_id). Secrets in Secrets Manager with 90-day rotation.
+- AWS Lake Formation at the Athena engine (table/column/row/cell-level permissions, enforced by the query engine itself, not application code). Even if Policy has a gap, Athena physically cannot return unauthorized data.
+- Reconciliation job (daily minimum): compare Cedar permits against Lake Formation grants for each principal/table combination. Divergence → P1 alert + fail-closed (deny the request). If reconciliation job itself fails, alert and block until resolved.
+- Cedar policies support ABAC using OAuth claims (department, role, data-classification-tier)
+- Natural-language Cedar policy authoring (AgentCore feature) with mandatory human review before deployment — auto-generated policies SHALL NOT deploy without sign-off
+
+Tools (MCP server via AgentCore Gateway):
+- chatbot/mcp_server/ implementing: list_tables, get_schema, estimate_cost, run_query
+- Why MCP (not direct Lambda): semantic tool search, native Gateway/Policy/OBO integration, protocol standardization, automatic observability
+- Semantic tool search enabled on Gateway (x_amz_bedrock_agentcore_search) — solves "which of 300+ table tools do I need" at the tool layer
+- Dedicated read-only Athena workgroup (chatbot-readonly) with bytes-scanned limit, query result encryption (CMK), requester-pays disabled
+- MCP server validates all inputs: reject non-SELECT, inject LIMIT, check partition filters
+- Additional Gateway targets: glossary lookup tool, cost estimate tool
+
+Safety & Content (Policy ≠ Guardrails — both needed for different purposes):
+- Policy answers: "Is this principal allowed to call this tool?" (authorization, deterministic)
+- Guardrails answers: "Is this content safe / on-topic / free of PII?" (content safety, probabilistic)
+- Bedrock Guardrails (Standard tier) on EVERY model call, input + output: prompt injection detection, jailbreak detection, PII entity redaction (all 31 types, ANONYMIZE action), denied topics, content filters (HATE/VIOLENCE/SEXUAL/INSULTS/MISCONDUCT all HIGH)
+- AgentCore Policy + Guardrails integration (June 2026): attach Guardrail to Policy engine for tool-call I/O scanning at Gateway boundary
+- Output PII scan on query results + model narrative before display; redaction unless role permits viewing that PII category
+- SQL validation node: SELECT-only allowlist, LIMIT injection (default 10,000), partition filter required on partitioned tables, reject queries with * on tables >50 columns, cost estimate check (block if >10 GB scan), reject full table scans on tables >1 TB without elevated entitlement
+- Data freshness indicator on every result ("Data current as of…" from Glue Catalog partition/table update timestamps). Warning if data older than documented SLA.
+- User-facing error messages with actionable guidance per error type (auth denied, cost exceeded, SQL failed, rate limited, out of scope)
+
+Governance & Audit:
+- Immutable audit trail: S3 Object Lock (Compliance mode, 7-year retention, cross-region replication for RPO=0). Record includes: principal, original question, generated SQL, policy decision (permit/deny + policy_id + version), Lake Formation outcome, estimated/actual cost, row count, guardrails findings, session_id, trace_id.
+- AgentCore Observability: full OpenTelemetry tracing of every agent step, tool call, Policy decision, model invocation → CloudWatch dashboards (latency per node, error rates, Policy deny rates, cost per query) → bank SIEM (Splunk/QRadar) via subscription filters
+- AgentCore Optimization: batch evaluations + A/B testing (traffic splitting via Gateway) before any prompt/guardrail change reaches production. Statistical significance threshold (p<0.05) before promotion. Auto-rollback if treatment degrades within 15 min. (Fallback: self-managed eval script via BatchEvaluation API if Optimization still in preview)
+- Domain-specific evaluators: SQL correctness (golden dataset), schema fidelity (AST check vs. context), cost compliance (dry-run), answer quality (LLM-as-judge), safety (PII scan on eval outputs)
+- Model card per SR 26-2 (Federal Reserve, April 2026): purpose, training data provenance, known limitations, performance metrics from eval loop, responsible human owner
+- Administrative kill switch: disable any Gateway target within 5 minutes via API, no redeployment required. Runbook with escalation chain.
+- Segregation of duties: Cedar policy author ≠ approver; CI/CD enforces `cedar validate`; manual approval gate between staging and prod
+
+Threat Model & Assurance:
+- STRIDE threat model covering all attack surfaces: Chat UI→ALB, user prompts (injection/jailbreak), LLM output (hallucinated SQL), tool-call boundary (Gateway), Athena query execution, OBO token exchange, Cedar policy management, audit log integrity
+- Map controls to OWASP LLM Top 10 / MITRE Atlas: LLM01 (prompt injection), LLM02 (insecure output), LLM04 (model DoS), LLM06 (sensitive info disclosure), LLM07 (insecure plugin design), LLM08 (excessive agency)
+- Independent penetration test before production (scope: bypass Policy via direct tool invocation outside Gateway, obtain OBO token for different user, replay expired OBO, 100+ adversarial prompt attacks, Cedar bypass, session hijacking)
+- Chaos testing quarterly (AZ failure, AgentCore Runtime unavailability, Athena throttling)
+
+Performance & Reliability:
+- P95 end-to-end latency target: 30 seconds for queries scanning <1 GB
+- Latency budget: JWT validation (15ms) + Runtime init (200ms) + intent classify (2s, use Claude Haiku) + schema RAG (500ms) + SQL gen (5s) + Guardrails input (400ms) + SQL validation (10ms) + Policy/Cedar (30ms) + OBO exchange (300ms) + Athena execution (15s P95) + Guardrails output (400ms) + formatting (100ms) = ~24s P95
+- Optimization levers: columnar format (Parquet/ORC), query result caching, pre-computed per-user authorized schema sets
+- Multi-AZ deployment (2+ AZs for all stateless components): FastAPI min 2 tasks / max 10, scaling on TargetResponseTime >1s or CPU >60%
+- RTO 30 min / RPO 5 min for chat service; RPO 0 for audit log (cross-region replication)
+- 99.9% monthly availability target (excluding planned maintenance)
+
+Network & Encryption:
+- ALL traffic via VPC PrivateLink — no public internet for agent-to-tool, tool-to-data, or agent-to-model traffic
+- VPC endpoints for: Bedrock Runtime, AgentCore, Athena, Glue, S3, Secrets Manager, KMS, CloudWatch, Cognito, OpenSearch Serverless
+- Customer-managed KMS keys (separate per data domain: data lake, audit, OpenSearch, query results, Gateway). Key policies scoped to specific service roles. CloudTrail logging on every kms:Decrypt.
+- TLS 1.2+ everywhere; reject TLS 1.0/1.1
+- Security groups: sg-alb (443 from corporate CIDR), sg-fastapi (8000 from sg-alb only), sg-vpce (443 from sg-fastapi + sg-agentcore)
+- Secrets Manager for all OAuth client secrets, API keys — automatic rotation ≤90 days
+- Data residency: all data (prompts, traces, audit, OBO tokens) remains within designated AWS region(s)
+
+Compliance & Governance Gaps (require human sign-off, not tool-automatable):
+- SR 26-2 (model risk management for AI/ML in banking)
+- EU AI Act (Article 26 deployer obligations; assess Annex III Category 5(b) — access to essential private services)
+- PCI DSS 4.0 (if cardholder data in scope)
+- GDPR/UK GDPR (PII redaction, data residency, DSAR response via audit log)
+- InfoSec review of AgentCore shared-responsibility model
+- Cedar policy completeness (data governance team sign-off + periodic re-certification)
+- Data residency legal review across jurisdictions
+
+Deployment & CI/CD:
+- AWS CodePipeline + CodeBuild (or GitLab CI): lint → test → cedar validate → batch evaluation → manual approval → canary deploy (5% → monitor 30 min → promote or auto-rollback)
+- Rolling update for FastAPI (min healthy 50%, zero-downtime)
+- Agent updates packaged via AgentCore Starter Toolkit as container images
+
+Cost Analysis (include in design):
+- Compare AgentCore Runtime vs. Fargate for agent hosting: show I/O-wait billing advantage (~60-70% savings for this workload profile)
+- Show per-user cost attribution via workgroup tags
+- Include CloudWatch Cost Anomaly Detection + AWS Budgets (alert at 80%/100%)
+
+Well-Architected Alignment: explicitly map design decisions to all 6 pillars (Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization, Sustainability)
+
+ADRs (Architecture Decision Records): document for each major choice: LangGraph vs alternatives, AgentCore Runtime vs Fargate, two-layer auth vs single layer, OBO vs shared role, MCP vs direct Lambda, OpenSearch vs alternative vector stores
+
+Infrastructure as Code: AWS CDK (TypeScript) with separate stacks for networking, security, data, compute, observability — no circular dependencies
+
+Structure: chatbot/{api,agent,mcp_server,policies,infra,tests,scripts}/ + pyproject.toml</span></div>
+<div class="callout"><div class="callout-label">Why this level of detail?</div>Each line in this prompt maps to a specific section in the generated design.md. This prompt produced the full Security Architecture Design including: 6 security principles, Mermaid architecture + sequence diagrams, two-layer authorization deep-dive with failure scenarios, STRIDE threat model with OWASP LLM mapping, component table (23 services), cost comparison, latency budget, VPC topology with data flow classification, cryptographic controls, identity chain of trust, deployment architecture, 5+ ADRs, Well-Architected alignment, and evaluation framework. See the <a href="#prompts">Exact Kiro Prompts</a> section for annotations on why each line matters.</div>
+
+<h3>Step 3 — Choose "Feature" as Your Intent</h3>
+<p>After you submit the prompt, Kiro asks: <strong>"What is your intent?"</strong></p>
+<table>
+<tr><th>Option</th><th>When to use</th><th>For this chatbot?</th></tr>
+<tr><td><strong>Feature</strong> &larr; choose this</td><td>Building a new capability with requirements, design, and implementation</td><td><strong>Yes</strong> — the chatbot is a full feature requiring structured planning</td></tr>
+<tr><td>Bug Fix</td><td>Fixing an existing defect</td><td>No</td></tr>
+<tr><td>Refactor</td><td>Restructuring without changing behaviour</td><td>No</td></tr>
+</table>
+<div class="callout"><div class="callout-label">Action</div>Click <strong>Feature</strong>. Kiro now asks you to choose a workflow.</div>
+
+<h3>Step 4 — Choose Your Workflow</h3>
+<p>Kiro presents three workflow options. Your choice determines the order of spec generation:</p>
+<table>
+<tr><th>Workflow</th><th>Order of generation</th><th>Best for</th><th>For this chatbot?</th></tr>
+<tr><td><strong>Requirements-First</strong></td><td>requirements.md &rarr; design.md &rarr; tasks.md</td><td>When you need stakeholder sign-off on <em>what</em> before deciding <em>how</em></td><td>Good if compliance team must approve requirements before architecture</td></tr>
+<tr><td><strong>Design-First</strong></td><td>design.md &rarr; requirements.md &rarr; tasks.md</td><td>When you already know the technical constraints and want architecture reviewed first</td><td><strong>Recommended</strong> — bank security model drives the design</td></tr>
+<tr><td><strong>Quick Plan</strong></td><td>All three generated at once, no approval gates</td><td>Well-understood features, low risk</td><td><strong>Never</strong> for regulated systems — no human reviews auth before code</td></tr>
+</table>
+
+<div class="callout warn"><div class="callout-label">Warning</div>Quick Plan skips all human approval gates between phases. For a chatbot touching financial data, this is an anti-pattern — see <a href="#antipatterns">Anti-Patterns</a>.</div>
+
+<h4>If you choose Design-First (recommended)</h4>
+<p>Kiro immediately generates <code>design.md</code> containing:</p>
+<ul>
+<li>Architecture diagram and component descriptions</li>
+<li>Data flow and sequence diagrams</li>
+<li>STRIDE threat model</li>
+<li>Architecture Decision Records (ADRs)</li>
+<li>Cost estimates and latency budget</li>
+</ul>
+
+<h4>If you choose Requirements-First</h4>
+<p>Kiro immediately generates <code>requirements.md</code> containing:</p>
+<ul>
+<li>User stories with acceptance criteria in EARS notation</li>
+<li>Functional and non-functional requirements</li>
+<li>Security and compliance requirements</li>
+</ul>
+
+<h3>Step 5 — Follow the Workflow Through Each Phase</h3>
+<p>After Kiro generates the first spec file, a review-and-approve cycle begins:</p>
+
+<h4>Phase A: Review the first generated file</h4>
+<table>
+<tr><th>What Kiro shows you</th><th>What you do</th><th>Your options</th></tr>
+<tr><td>The generated spec file (design.md or requirements.md)</td><td>Read carefully. Check for gaps.</td><td><strong>Approve</strong> to proceed, or <strong>ask for changes</strong> in the chat</td></tr>
+</table>
+
+<p><strong>Example review prompts you might send before approving:</strong></p>
+<div class="prompt-box"><div class="prompt-label">Review prompt — if design is missing OBO</div><span class="prompt-text">The design mentions a service role for Athena queries. Change this to On-Behalf-Of (OBO) token exchange via AgentCore Identity so that Lake Formation per-user grants actually apply.</span></div>
+<div class="prompt-box"><div class="prompt-label">Review prompt — if retry bounds are missing</div><span class="prompt-text">Add explicit bounds to the agent graph: max 3 disambiguation turns, max 2 self-correction retries. Without these, the agent can loop indefinitely (cost bomb).</span></div>
+<div class="prompt-box"><div class="prompt-label">Review prompt — stress test</div><span class="prompt-text">Walk me through what happens if a user's prompt jailbreaks the model into generating a query against a table they shouldn't see — where does the system actually stop that?</span></div>
+
+<h4>Phase B: Approve &rarr; next file generated</h4>
+<p>Once you click <strong>Approve</strong>, Kiro generates the next spec file in sequence:</p>
+<div class="diagram"><span class="hl">Design-First path:</span>
+  design.md <span class="g">&rarr; [Approve]</span> &rarr; requirements.md <span class="g">&rarr; [Approve]</span> &rarr; tasks.md <span class="g">&rarr; [Approve]</span> &rarr; Ready
+
+<span class="hl">Requirements-First path:</span>
+  requirements.md <span class="g">&rarr; [Approve]</span> &rarr; design.md <span class="g">&rarr; [Approve]</span> &rarr; tasks.md <span class="g">&rarr; [Approve]</span> &rarr; Ready</div>
+
+<h4>Phase C: All three files approved — start implementation</h4>
+<p>After the final approval (tasks.md), the spec is complete. All files live in:</p>
+<pre><code>.kiro/specs/athena-chatbot/
+├── requirements.md   <span class="cm"># EARS user stories + acceptance criteria</span>
+├── design.md         <span class="cm"># Architecture, STRIDE, ADRs</span>
+└── tasks.md          <span class="cm"># CPM waves, dependency-ordered tasks</span></code></pre>
+
+<p>Now you can start implementation by running tasks:</p>
+<div class="prompt-box"><div class="prompt-label">Run the first wave</div><span class="prompt-text">#spec:athena-chatbot run all tasks in wave 1</span></div>
+<div class="prompt-box"><div class="prompt-label">Or implement a specific task</div><span class="prompt-text">#spec:athena-chatbot implement task 16</span></div>
+
+<h3>Summary: Complete Action Sequence</h3>
+<table>
+<tr><th>#</th><th>You do</th><th>Kiro responds with</th><th>Time</th></tr>
+<tr><td>1</td><td>Click <strong>+</strong> under Specs (or choose Spec in chat)</td><td>Prompt input dialog</td><td>2s</td></tr>
+<tr><td>2</td><td>Paste the bank-grade prompt (Option C above)</td><td>"What is your intent?"</td><td>—</td></tr>
+<tr><td>3</td><td>Click <strong>Feature</strong></td><td>"Choose your workflow"</td><td>—</td></tr>
+<tr><td>4</td><td>Click <strong>Design-First</strong></td><td>Generates <code>design.md</code> (30-90s)</td><td>~60s</td></tr>
+<tr><td>5</td><td>Review design &rarr; Ask questions or request changes</td><td>Updated <code>design.md</code></td><td>5-15 min</td></tr>
+<tr><td>6</td><td>Click <strong>Approve</strong> on design</td><td>Generates <code>requirements.md</code> (20-40s)</td><td>~30s</td></tr>
+<tr><td>7</td><td>Review requirements &rarr; Request changes if needed</td><td>Updated <code>requirements.md</code></td><td>5-10 min</td></tr>
+<tr><td>8</td><td>Click <strong>Approve</strong> on requirements</td><td>Generates <code>tasks.md</code> (20-40s)</td><td>~30s</td></tr>
+<tr><td>9</td><td>Review tasks &rarr; Request changes if needed</td><td>Updated <code>tasks.md</code></td><td>5-10 min</td></tr>
+<tr><td>10</td><td>Click <strong>Approve</strong> on tasks</td><td>"Spec complete. Ready to implement."</td><td>—</td></tr>
+<tr><td>11</td><td>Type: <code>#spec:athena-chatbot run all tasks in wave 1</code></td><td>Kiro writes code following the approved plan</td><td>2-5 min</td></tr>
+</table>
+
+<div class="callout tip"><div class="callout-label">Key Insight</div>The whole point of these approval gates is that <strong>no code exists until all three spec files are reviewed by a human</strong>. For a bank chatbot, this means your security architecture (design.md) and your access control requirements (requirements.md) are approved before Kiro writes a single line of code.</div>
+</section>
+
+<section id="design-review">
+<div class="section-label">01 &mdash; Intermediate</div>
+<span class="tier-badge int">Intermediate</span>
+<h2>Reviewing design.md: The Stress Test</h2>
+<p>After Kiro generates <code>design.md</code>, ask this question:</p>
+<div class="prompt-box"><div class="prompt-label">Stress-test prompt</div><span class="prompt-text">"Walk me through what happens if a user's prompt successfully jailbreaks the model into generating a query against a table they shouldn't see — where does the system actually stop that?"</span></div>
+<h3>A correct answer must reference:</h3>
+<ol>
+<li><strong>AgentCore Policy at the Gateway</strong> &mdash; deterministic, never sees prompt, only evaluates principal/action/resource.</li>
+<li><strong>Lake Formation at Athena</strong> &mdash; even if Policy has a gap, the query engine itself refuses unauthorized rows/columns.</li>
+</ol>
+<div class="callout warn"><div class="callout-label">Red flag</div>If the answer relies on "the system prompt tells the model not to" or solely on Guardrails — those are content safety controls, not authorization. The design isn't done.</div>
+<h3>Other checks</h3>
+<ul>
+<li>Does data flow through Gateway before reaching any tool?</li>
+<li>Is <dfn title="On-Behalf-Of token exchange">OBO</dfn> token exchange shown (not a shared service role)?</li>
+<li>Is the retry loop structurally bounded in the graph?</li>
+<li>Clear separation: Policy (authorization) vs Guardrails (content safety)?</li>
+</ul>
+</section>
+
+<section id="tasks-waves">
+<span class="tier-badge int">Intermediate</span>
+<h2>Tasks &amp; Waves</h2>
+<p><code>tasks.md</code> is a dependency graph grouped into waves. Tasks within a wave run concurrently; waves run sequentially.</p>
+<div class="diagram"><span class="hl">Wave 1</span> &mdash; no dependencies (run concurrently)
+    &darr;
+<span class="hl">Wave 2</span> &mdash; depends only on Wave 1
+    &darr;
+<span class="hl">Wave N</span> &mdash; continues until complete</div>
+<h3>Executing tasks in Kiro</h3>
+<pre><code><span class="cm"># Implement a specific task</span>
+<span class="str">#spec:athena-chatbot implement task 22</span>
+
+<span class="cm"># Run an entire wave</span>
+<span class="str">#spec:athena-chatbot run all tasks in wave 1</span></code></pre>
+<div class="callout tip"><div class="callout-label">Tip</div>Before T-22 (agent graph), ask Kiro to generate a Mermaid diagram first. Review the graph structure with security team before any code.</div>
+</section>
+
+<section id="steering">
+<div class="section-label">01 &mdash; Intermediate</div>
+<span class="tier-badge int">Intermediate</span>
+<h2>Steering Files: Persistent Project Rules</h2>
+<p>Steering gives Kiro persistent knowledge. Rules apply to every interaction without repeating them. <a href="https://kiro.dev/docs/steering/">Docs</a> &middot; <a href="https://kiro.dev/blog/stop-repeating-yourself/">Blog</a></p>
+<table>
+<tr><th>Scope</th><th>Location</th><th>Applies to</th></tr>
+<tr><td>Workspace</td><td><code>.kiro/steering/</code></td><td>This project</td></tr>
+<tr><td>Global</td><td><code>~/.kiro/steering/</code></td><td>All projects</td></tr>
+</table>
+<h3>Create the security steering file</h3>
+<div class="prompt-box"><div class="prompt-label">Tell Kiro</div><span class="prompt-text">Create .kiro/steering/bank-security-model.md with:
+1. All tool calls through Gateway + Policy
+2. Lake Formation at query engine, not app code
+3. Cedar policies require human review
+4. Guardrails on every model call (input+output)
+5. OBO token exchange, no shared service role
+6. Bounded retry loops in graph structure
+7. Immutable audit for all auth decisions
+8. Segregation of duties: author ≠ approver</span></div>
+<p>Modes: Always (default) | Conditional (<code>fileMatch</code>) | Manual. <a href="https://kiro.dev/docs/steering/">Details</a></p>
+</section>
+
+<section id="hooks">
+<span class="tier-badge int">Intermediate</span>
+<h2>Agent Hooks: Automated Triggers</h2>
+<p>Hooks fire on IDE events. <a href="https://kiro.dev/docs/hooks/">Docs</a> &middot; <a href="https://kiro.dev/docs/hooks/types/">Types</a> &middot; <a href="https://kiro.dev/docs/hooks/examples/">Examples</a></p>
+<table>
+<tr><th>Event</th><th>Fires when</th><th>Example</th></tr>
+<tr><td><code>fileEdited</code></td><td>Save a file</td><td>Lint Python</td></tr>
+<tr><td><code>preToolUse</code></td><td>Before tool executes</td><td>Validate Cedar write</td></tr>
+<tr><td><code>postTaskExecution</code></td><td>Spec task completes</td><td>Run tests</td></tr>
+</table>
+<h3>Cedar validator hook</h3>
+<pre><code>{
+  <span class="kw">"name"</span>: <span class="str">"Cedar Validator"</span>, <span class="kw">"version"</span>: <span class="str">"1.0.0"</span>,
+  <span class="kw">"when"</span>: {<span class="kw">"type"</span>: <span class="str">"preToolUse"</span>, <span class="kw">"toolTypes"</span>: [<span class="str">"write"</span>]},
+  <span class="kw">"then"</span>: {<span class="kw">"type"</span>: <span class="str">"askAgent"</span>,
+    <span class="kw">"prompt"</span>: <span class="str">"If .cedar file: verify principal/action/resource, forbids for restricted DBs, no broad permits."</span>}
+}</code></pre>
+<p>Create via: Sidebar &rarr; Agent Hooks &rarr; <strong>+</strong> &middot; <a href="https://kiro.dev/docs/hooks/management/">Management</a></p>
+</section>
+
+<section id="mcp">
+<span class="tier-badge int">Intermediate</span>
+<h2>MCP Servers: Dev-Time Tools</h2>
+<p>MCP connects Kiro to external docs/tools during development (not chatbot runtime).</p>
+<pre><code><span class="cm">// .kiro/settings/mcp.json</span>
+{<span class="kw">"mcpServers"</span>: {
+  <span class="kw">"aws-docs"</span>: {<span class="kw">"command"</span>: <span class="str">"uvx"</span>, <span class="kw">"args"</span>: [<span class="str">"awslabs.aws-documentation-mcp-server@latest"</span>]}
+}}</code></pre>
+<div class="callout warn"><div class="callout-label">Don't confuse</div>Kiro MCP (<code>.kiro/settings/</code>) = helps YOU build &ne; AgentCore Gateway targets = chatbot calls at runtime.</div>
+</section>
+
+<section id="antipatterns">
+<span class="tier-badge int">Intermediate</span>
+<h2>Anti-Patterns Worth Naming</h2>
+<table>
+<tr><th>Anti-pattern</th><th>Why dangerous</th><th>Instead</th></tr>
+<tr><td>Quick Plan on regulated features</td><td>No human reviewed auth model before code</td><td>Design-First or Requirements-First</td></tr>
+<tr><td>Vague requirements ("be fast")</td><td>Can't test or trace</td><td>EARS: WHEN X THE SYSTEM SHALL Y within Z</td></tr>
+<tr><td>Shared service role for Athena</td><td>Lake Formation per-user grants become no-op</td><td>Always use OBO token exchange</td></tr>
+<tr><td>Unbounded retry loops</td><td>Cost bomb + latency bomb</td><td>Structural bound in graph definition</td></tr>
+<tr><td>Guardrails on generation only</td><td>Injection at any model call</td><td>Guardrails on EVERY call, input + output</td></tr>
+<tr><td>Auto-deploy Cedar without review</td><td>Misconfigured permit exposes data</td><td>Human review mandatory before deploy</td></tr>
+</table>
+</section>
+
+<section id="architecture">
+<div class="section-label">02 &mdash; Advanced Build</div>
+<span class="tier-badge adv">Advanced</span>
+<h2>Full Architecture</h2>
+<pre><code>User &rarr; Cognito (SAML+MFA) &rarr; FastAPI (JWT) &rarr; AgentCore Runtime (LangGraph)
+  &rarr; Gateway &rarr; Policy (Cedar) &rarr; Identity (OBO) &rarr; MCP Server
+  &rarr; Athena &rarr; Lake Formation &rarr; Results
+  &rarr; Guardrails PII scan &rarr; Format &rarr; User
+
+All traced: Observability &rarr; Immutable audit (S3 Object Lock, 7yr)</code></pre>
+<p>Full diagrams, sequence diagram, component table, ADRs, and latency budget in <code>design.md</code>.</p>
+</section>
+
+<section id="two-layer">
+<span class="tier-badge adv">Advanced</span>
+<h2>Two-Layer Authorization</h2>
+<div class="grid-2">
+<div class="card"><h4>Layer 1: Cedar (Gateway)</h4><ul><li>Deterministic, default-deny</li><li>Never sees the prompt</li><li>Stops tool call from executing</li></ul></div>
+<div class="card"><h4>Layer 2: Lake Formation (Athena)</h4><ul><li>Enforced by query engine</li><li>Cannot bypass via app code</li><li>Stops data from being returned</li></ul></div>
+</div>
+<table>
+<tr><th>Scenario</th><th>Layer 1</th><th>Layer 2</th><th>Result</th></tr>
+<tr><td>Jailbroken prompt</td><td>DENY</td><td>N/A</td><td><strong>Blocked</strong></td></tr>
+<tr><td>Jailbreak + Cedar bug</td><td>ALLOW (wrong)</td><td>DENY</td><td><strong>Still blocked</strong></td></tr>
+<tr><td>Both misconfigured</td><td>ALLOW</td><td>ALLOW</td><td>Reconciliation job detects</td></tr>
+</table>
+</section>
+
+<section id="prompts">
+<span class="tier-badge adv">Advanced</span>
+<h2>Exact Kiro Prompts</h2>
+<p>Vague prompts produce vague designs. This is the same Design-First prompt introduced in <a href="#workflows">Generate the Three Spec Files</a> — reproduced here with annotations on why each line matters, so you understand what you'd be removing if you trim it down.</p>
+<div class="prompt-box"><div class="prompt-label">Annotated — why each line is here</div><span class="prompt-text">Design a production chatbot for NatWest business users to query several hundred Athena tables in natural language. Project directory: chatbot/
+
+- Cognito federated to corporate IdP (SAML/OIDC, MFA, 15-min JWTs)
+- FastAPI (chatbot/api/) — thin auth layer, delegates to agent
+- LangGraph agent (chatbot/agent/) on AgentCore Runtime — explicit graph with disambiguation (max 3) and self-correction (max 2)
+- ALL tool calls through AgentCore Gateway + Policy (Cedar, default-deny, forbid-wins)
+- MCP server (chatbot/mcp_server/) — list_tables, get_schema, estimate_cost, run_query
+- AgentCore Identity OBO — queries run as authenticated user
+- Lake Formation at Athena engine (second independent auth layer)
+- Bedrock Guardrails (Standard) on every model call, input + output
+- Immutable audit trail (S3 Object Lock, 7-year)
+- Reconciliation job: alert + fail-closed if Cedar and Lake Formation diverge
+
+Structure: chatbot/{api,agent,mcp_server,policies,infra,tests,scripts}/ + pyproject.toml</span></div>
+<table>
+<tr><th>Line</th><th>Why it's non-negotiable</th></tr>
+<tr><td>Cognito + MFA + 15-min JWTs</td><td>Short-lived tokens limit the blast radius of a leaked credential — a common ask from bank security review</td></tr>
+<tr><td>FastAPI as a thin auth layer</td><td>Keeps authentication logic out of the agent graph, so it can be audited independently of AI behaviour</td></tr>
+<tr><td>Disambiguation (max 3) / self-correction (max 2)</td><td>Without explicit bounds, an agent can retry indefinitely — see <a href="#antipatterns">Anti-Patterns</a>, "Unbounded retry loops"</td></tr>
+<tr><td>ALL tool calls through Gateway + Policy</td><td>This is Layer 1 of the <a href="#two-layer">Two-Layer Authorization</a> model — skipping it removes deterministic, prompt-blind access control</td></tr>
+<tr><td>AgentCore Identity OBO</td><td>Prevents the #1 anti-pattern in this course: a shared service role that makes Lake Formation's per-user grants a no-op</td></tr>
+<tr><td>Lake Formation at Athena engine</td><td>Layer 2 of the two-layer model — the query engine itself refuses unauthorized data, even if Policy has a gap</td></tr>
+<tr><td>Guardrails on every model call</td><td>Content-safety and authorization are different controls — Guardrails alone are not an access-control substitute</td></tr>
+<tr><td>Immutable audit (S3 Object Lock, 7-year)</td><td>Regulators ask retroactively; a mutable log doesn't satisfy that</td></tr>
+<tr><td>Reconciliation job</td><td>Catches the case where both auth layers are independently misconfigured — see the <a href="#two-layer">Two-Layer Authorization</a> scenario table</td></tr>
+</table>
+<h3>For contrast — a vague prompt</h3>
+<pre><code>Build a chatbot that queries our data lake using AI.</code></pre>
+<p>Missing: two-layer auth, <dfn title="On-Behalf-Of token exchange">OBO</dfn>, bounded retries, reconciliation, cost guardrails, audit trail, SR 26-2.</p>
+</section>
+
+
+<section id="subagents">
+<span class="tier-badge adv">Advanced</span>
+<h2>Custom Subagents</h2>
+<p>Specialized agents in <code>.kiro/agents/</code> that Kiro delegates to for specific tasks.</p>
+<h3>Cedar Policy Reviewer</h3>
+<pre><code><span class="cm"># .kiro/agents/cedar-reviewer.md</span>
+<span class="kw">## Purpose</span>: Review Cedar policies for security issues.
+<span class="kw">## Instructions</span>:
+1. Check for overly broad permits (no when clause)
+2. Verify forbid policies for Restricted/PCI databases
+3. Ensure principal constraints reference actual IdP groups
+4. Flag permits granting access to multiple databases
+<span class="kw">## Scope</span>: Read Cedar files only. Do not modify.</code></pre>
+<p>Steering = passive rules (always active). Subagents = active specialists (invoked on demand).</p>
+</section>
+
+<section id="cost">
+<span class="tier-badge adv">Advanced</span>
+<h2>Cost Trade-offs: AgentCore Runtime vs Fargate</h2>
+<p>AgentCore Runtime bills per-second. Key: <strong>no CPU charge during I/O wait</strong> (waiting for LLM/Athena).</p>
+<div class="grid-2">
+<div class="card"><h4>AgentCore Runtime</h4><p>CPU: ~9s active &times; 1000 queries &times; $0.0000463 &asymp; <strong>$0.42/day</strong></p><p>Memory: $0.46/day</p><p><strong>Total: ~$0.88/day</strong></p></div>
+<div class="card"><h4>Equivalent Fargate</h4><p>CPU: 45s &times; 1000 &times; $0.0000463 &asymp; <strong>$2.08/day</strong></p><p>Memory: $0.46/day</p><p><strong>Total: ~$2.54/day</strong> + DynamoDB</p></div>
+</div>
+<p>Runtime is ~60-70% cheaper for I/O-heavy agent workloads. Use Fargate for FastAPI (short-lived, stateless). <a href="https://aws.amazon.com/bedrock/agentcore/pricing/">Source: AWS Pricing</a></p>
+</section>
+
+<section id="mcp-decision">
+<span class="tier-badge adv">Advanced</span>
+<h2>MCP vs. Direct Integration</h2>
+<p>Should your Athena tools be an MCP server (via Gateway) or direct Lambda calls?</p>
+<table>
+<tr><th>Dimension</th><th>MCP (Recommended)</th><th>Direct Lambda</th></tr>
+<tr><td>Semantic tool search</td><td><strong>Enabled</strong> (finds tool from 300+)</td><td>Not available</td></tr>
+<tr><td>Policy + OBO</td><td>Native via Gateway</td><td>Custom code per endpoint</td></tr>
+<tr><td>Observability</td><td>Automatic tracing</td><td>Manual instrumentation</td></tr>
+<tr><td>Portability</td><td>Open standard</td><td>Tied to your impl</td></tr>
+</table>
+<div class="callout"><div class="callout-label">Recommendation</div>Use MCP for all production tools. With 300+ tables, mandatory Gateway/Policy/OBO, and bank audit requirements, the advantages far outweigh the cost of building an MCP server.</div>
+</section>
+
+<section id="testing">
+<span class="tier-badge adv">Advanced</span>
+<h2>Generate Tests with Kiro (Not by Hand)</h2>
+<p>You control <em>what</em> to test. Kiro generates the pytest code.</p>
+<h3>Method 1: Include in tasks.md</h3>
+<pre><code>- [ ] <span class="kw">**T-25**</span> Implement SQL validation
+  - <span class="str">Include tests: reject DROP, accept SELECT, inject LIMIT</span></code></pre>
+<h3>Method 2: Direct prompt</h3>
+<div class="prompt-box"><div class="prompt-label">Tell Kiro</div><span class="prompt-text">Generate pytest tests for mcp_server/server.py covering:
+1. validate_sql rejects DROP/INSERT
+2. inject_limit adds LIMIT when missing
+3. check_partition_filter rejects without filter
+Mock AWS. Put in tests/test_mcp_server.py.</span></div>
+<h3>Method 3: Hook (auto after every task)</h3>
+<pre><code>{<span class="kw">"name"</span>:<span class="str">"Auto Tests"</span>,<span class="kw">"version"</span>:<span class="str">"1.0.0"</span>,
+ <span class="kw">"when"</span>:{<span class="kw">"type"</span>:<span class="str">"postTaskExecution"</span>},
+ <span class="kw">"then"</span>:{<span class="kw">"type"</span>:<span class="str">"askAgent"</span>,<span class="kw">"prompt"</span>:<span class="str">"Generate pytest tests for code just implemented. Mock AWS. Put in tests/."</span>}}</code></pre>
+<h3>Ensure quality via steering</h3>
+<pre><code><span class="cm"># .kiro/steering/tech.md</span>
+Tests: pytest, mock AWS with moto, parametrize, include happy+error+edge.</code></pre>
+</section>
+
+<section id="implementation">
+<span class="tier-badge adv">Advanced</span>
+<h2>Step-by-Step: Kiro Builds the Chatbot</h2>
+<table>
+<tr><th>Step</th><th>You do</th><th>Kiro creates</th></tr>
+<tr><td>1</td><td>Create <code>chatbot/</code>, open in Kiro</td><td><code>.kiro/</code> appears</td></tr>
+<tr><td>2</td><td>Create steering (security rules)</td><td><code>.kiro/steering/bank-security-model.md</code></td></tr>
+<tr><td>3</td><td>SPECS &rarr; + Create New Spec &rarr; paste prompt &rarr; Enter</td><td><code>requirements.md</code></td></tr>
+<tr><td>4</td><td>Approve requirements</td><td><code>design.md</code></td></tr>
+<tr><td>5</td><td>Approve design</td><td><code>tasks.md</code></td></tr>
+<tr><td>6</td><td>Approve tasks</td><td>Ready to build</td></tr>
+<tr><td>7</td><td><code>#spec:athena-chatbot run all tasks in wave 1</code></td><td><code>api/</code>, <code>infra/</code>, <code>scripts/</code></td></tr>
+<tr><td>8</td><td><code>#spec:athena-chatbot implement task 16</code></td><td><code>mcp_server/server.py</code></td></tr>
+<tr><td>9</td><td><code>#spec:athena-chatbot implement task 20</code> &rarr; REVIEW</td><td><code>policies/chatbot.cedar</code></td></tr>
+<tr><td>10</td><td><code>#spec:athena-chatbot implement task 22</code></td><td><code>agent/graph.py</code></td></tr>
+<tr><td>11</td><td><code>#spec:athena-chatbot run all tasks in wave 4</code></td><td>Guardrails + validation</td></tr>
+<tr><td>12</td><td><code>#spec:athena-chatbot implement task 37</code></td><td><code>tests/</code></td></tr>
+<tr><td>13</td><td><code>uvicorn api.main:app --reload</code></td><td>Running at :8000</td></tr>
+</table>
+<h3>Final project structure</h3>
+<pre><code>chatbot/
+├── .kiro/specs/athena-chatbot/{requirements,design,tasks}.md
+├── .kiro/steering/bank-security-model.md
+├── api/{main,auth,config}.py
+├── agent/{graph,state}.py + nodes/
+├── mcp_server/server.py
+├── policies/chatbot.cedar
+├── infra/ <span class="cm">(CDK stacks)</span>
+├── tests/
+├── pyproject.toml
+└── requirements.txt</code></pre>
+<div class="callout"><div class="callout-label">What happened</div>You gave Kiro one design prompt. It generated 3 spec files. You reviewed &amp; approved each. Kiro implemented the entire project following the approved plan, respecting your steering rules.</div>
+</section>
+
+<section id="mvp-prod">
+<div class="section-label">03 &mdash; Ship It</div>
+<h2>MVP vs Production</h2>
+<h3>Safe to defer for pilot</h3>
+<table>
+<tr><th>Area</th><th>MVP shortcut</th></tr>
+<tr><td>Policy granularity</td><td>Database-level Cedar (not table/column)</td></tr>
+<tr><td>Evaluation loop</td><td>Manual review (not A/B tests)</td></tr>
+<tr><td>Disambiguation</td><td>Fail on ambiguous queries</td></tr>
+</table>
+<h3>Never cut, even for MVP</h3>
+<table>
+<tr><th>Control</th><th>Why</th></tr>
+<tr><td>Policy on Gateway, default-deny</td><td>Without: every tool call uncontrolled</td></tr>
+<tr><td>Lake Formation + OBO</td><td>Without: per-user grants are no-op</td></tr>
+<tr><td>Guardrails every call</td><td>Injection at any call is dangerous</td></tr>
+<tr><td>Bounded retries</td><td>Unbounded = cost bomb</td></tr>
+<tr><td>Immutable audit</td><td>Regulators ask retroactively</td></tr>
+</table>
+</section>
+
+<section id="cheatsheet">
+<h2>Cheat Sheet</h2>
+<table>
+<tr><th>Action</th><th>How</th></tr>
+<tr><td>New spec</td><td>Specs &rarr; + &rarr; Feature &rarr; Design-First</td></tr>
+<tr><td>Implement task</td><td><code>#spec:athena-chatbot implement task 22</code></td></tr>
+<tr><td>Run wave</td><td><code>#spec:athena-chatbot run all tasks in wave 1</code></td></tr>
+<tr><td>Steering</td><td><code>.kiro/steering/*.md</code></td></tr>
+<tr><td>Hooks</td><td><code>.kiro/hooks/*.json</code></td></tr>
+<tr><td>MCP config</td><td><code>.kiro/settings/mcp.json</code></td></tr>
+<tr><td>Run locally</td><td><code>uvicorn api.main:app --reload --port 8000</code></td></tr>
+<tr><td>Tests</td><td><code>pytest tests/ -v</code></td></tr>
+<tr><td>Validate Cedar</td><td><code>cedar validate --policies ./policies/</code></td></tr>
+</table>
+</section>
+
+<section id="sources">
+<h2>Sources &amp; Links</h2>
+<table>
+<tr><th>Topic</th><th>URL</th></tr>
+<tr><td>Kiro Specs</td><td><a href="https://kiro.dev/docs/specs/">kiro.dev/docs/specs</a></td></tr>
+<tr><td>Kiro Steering</td><td><a href="https://kiro.dev/docs/steering/">kiro.dev/docs/steering</a></td></tr>
+<tr><td>Kiro Hooks</td><td><a href="https://kiro.dev/docs/hooks/">kiro.dev/docs/hooks</a></td></tr>
+<tr><td>Design-First workflow</td><td><a href="https://kiro.dev/docs/specs/feature-specs/tech-design-first/">kiro.dev/docs/specs/.../tech-design-first</a></td></tr>
+<tr><td>EARS notation</td><td><a href="https://en.wikipedia.org/wiki/Easy_Approach_to_Requirements_Syntax">Wikipedia</a></td></tr>
+<tr><td>AgentCore Policy</td><td><a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html">AWS docs</a></td></tr>
+<tr><td>AgentCore Identity OBO</td><td><a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/on-behalf-of-token-exchange.html">AWS docs</a></td></tr>
+<tr><td>Lake Formation</td><td><a href="https://docs.aws.amazon.com/lake-formation/latest/dg/data-filtering.html">AWS docs</a></td></tr>
+<tr><td>Bedrock Guardrails</td><td><a href="https://aws.amazon.com/bedrock/guardrails/">AWS</a></td></tr>
+<tr><td>STRIDE</td><td><a href="https://learn.microsoft.com/en-us/azure/security/develop/threat-modeling-tool-getting-started">Microsoft</a></td></tr>
+</table>
+</section>
+
+<footer>
+<p>Kiro SDD Course &middot; July 2026 &middot; Companion: <a href="hands-on-guide.html">Hands-On AWS Setup Guide</a></p>
+<p>Architecture details: see <code>design.md</code> &middot; Task plan: see <code>tasks.md</code> &middot; Requirements: see <code>requirements.md</code></p>
+</footer>
+</main>
+
+<a href="#" class="back-top" id="backTop">&uarr; TOP</a>
+
+<script>
+// Back to top
+const bt=document.getElementById('backTop');
+window.addEventListener('scroll',()=>{bt.classList.toggle('show',window.scrollY>400)});
+// Active nav
+const ss=document.querySelectorAll('section[id]'),nl=document.querySelectorAll('nav.sidebar a');
+const ob=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)nl.forEach(l=>{
+  const isActive=l.getAttribute('href')==='#'+e.target.id;
+  l.classList.toggle('active',isActive);
+  l.setAttribute('aria-current', isActive ? 'true' : 'false');
+})})},{rootMargin:'-20% 0px -70% 0px'});
+ss.forEach(s=>ob.observe(s));
+// Mobile nav close
+nl.forEach(l=>l.addEventListener('click',()=>document.querySelector('nav.sidebar').classList.remove('open')));
+
+// Copy-to-clipboard buttons on every prompt box
+document.querySelectorAll('.prompt-box').forEach(box=>{
+  const textEl=box.querySelector('.prompt-text');
+  if(!textEl)return; // skip if not wrapped (shouldn't happen, but stay safe)
+  const btn=document.createElement('button');
+  btn.className='copy-btn';
+  btn.type='button';
+  btn.textContent='Copy';
+  btn.setAttribute('aria-label','Copy prompt text to clipboard');
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(textEl.textContent.trim()).then(()=>{
+      btn.textContent='Copied!';
+      setTimeout(()=>{btn.textContent='Copy'},1500);
+    }).catch(()=>{
+      btn.textContent='Failed';
+      setTimeout(()=>{btn.textContent='Copy'},1500);
+    });
+  });
+  box.appendChild(btn);
+});
+
+// Progress tracking (localStorage, per section)
+const checks=document.querySelectorAll('.progress-check');
+const progressEl=document.getElementById('navProgress');
+function updateProgressLabel(){
+  const total=checks.length;
+  const done=Array.from(checks).filter(c=>c.checked).length;
+  progressEl.textContent=`Progress: ${done}/${total} sections`;
+}
+checks.forEach(cb=>{
+  const key='kiro-course-progress-'+cb.dataset.section;
+  cb.checked=localStorage.getItem(key)==='true';
+  cb.addEventListener('click',e=>e.stopPropagation()); // don't trigger nav link
+  cb.addEventListener('change',()=>{
+    localStorage.setItem(key,cb.checked);
+    updateProgressLabel();
+  });
+});
+updateProgressLabel();
+</script>
+</body>
+</html>

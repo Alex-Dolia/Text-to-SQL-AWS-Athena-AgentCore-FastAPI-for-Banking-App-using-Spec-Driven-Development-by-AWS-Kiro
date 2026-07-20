@@ -1,0 +1,70 @@
+// Cedar Schema for Chatbot Security Architecture
+// Defines Principal (User), Resource (Table), and Action types
+// for deterministic authorization at the AgentCore Gateway boundary.
+//
+// Design principles:
+//   - Default-deny: no access without explicit permit
+//   - Forbid-wins: forbid always overrides permit
+//   - ABAC evaluation using OAuth claims (department, role, tier, groups)
+//   - Classification tier hierarchy: public(1) < internal(2) < confidential(3) < restricted(4)
+
+namespace Chatbot {
+
+    // ─── Entity Types ────────────────────────────────────────────────────────────
+
+    entity User = {
+        // Department from SAML assertion / OIDC token
+        department: String,
+        // Role mapped from IdP (e.g., "analyst", "manager", "security-operations")
+        role: String,
+        // Numeric classification tier level the user is cleared to access
+        // 1=public, 2=internal, 3=confidential, 4=restricted
+        data_classification_tier: Long,
+        // IdP group memberships (e.g., ["elevated_cost", "pii_viewers"])
+        groups: Set<String>,
+        // Databases the user's department is authorized to query
+        department_databases: Set<String>,
+    };
+
+    entity Table = {
+        // The Athena/Glue database this table belongs to
+        database: String,
+        // Numeric classification tier of the table's data
+        // 1=public, 2=internal, 3=confidential, 4=restricted
+        classification_tier: Long,
+        // Whether the table uses partitioning
+        is_partitioned: Bool,
+        // Estimated storage size in GB
+        estimated_size_gb: Long,
+    };
+
+    // ─── Action Types ────────────────────────────────────────────────────────────
+
+    // All actions that can be performed on Table resources via the chatbot
+    action "run_query" appliesTo {
+        principal: [User],
+        resource: [Table],
+    };
+
+    action "list_tables" appliesTo {
+        principal: [User],
+        resource: [Table],
+    };
+
+    action "get_schema" appliesTo {
+        principal: [User],
+        resource: [Table],
+    };
+
+    action "estimate_cost" appliesTo {
+        principal: [User],
+        resource: [Table],
+    };
+
+    // Administrative action for kill switch (Requirement 14.4)
+    action "kill_switch" appliesTo {
+        principal: [User],
+        resource: [Table],
+    };
+
+}

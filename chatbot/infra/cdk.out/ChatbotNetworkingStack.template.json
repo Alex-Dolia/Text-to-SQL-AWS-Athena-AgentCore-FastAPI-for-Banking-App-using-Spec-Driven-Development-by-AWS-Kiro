@@ -1,0 +1,1131 @@
+{
+ "Description": "Chatbot Security Architecture - Networking (VPC, PrivateLink, Security Groups)",
+ "Resources": {
+  "ChatbotVpcD40225CB": {
+   "Type": "AWS::EC2::VPC",
+   "Properties": {
+    "CidrBlock": "10.0.0.0/16",
+    "EnableDnsHostnames": true,
+    "EnableDnsSupport": true,
+    "InstanceTenancy": "default",
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "chatbot-vpc"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/ChatbotVpc/Resource"
+   }
+  },
+  "ChatbotVpcPrivateSubnet1Subnet88661181": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "AvailabilityZone": "eu-west-2a",
+    "CidrBlock": "10.0.0.0/24",
+    "MapPublicIpOnLaunch": false,
+    "Tags": [
+     {
+      "Key": "aws-cdk:subnet-name",
+      "Value": "Private"
+     },
+     {
+      "Key": "aws-cdk:subnet-type",
+      "Value": "Isolated"
+     },
+     {
+      "Key": "Name",
+      "Value": "ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet1/Subnet"
+   }
+  },
+  "ChatbotVpcPrivateSubnet1RouteTable8B6124CE": {
+   "Type": "AWS::EC2::RouteTable",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet1/RouteTable"
+   }
+  },
+  "ChatbotVpcPrivateSubnet1RouteTableAssociationEFF98B88": {
+   "Type": "AWS::EC2::SubnetRouteTableAssociation",
+   "Properties": {
+    "RouteTableId": {
+     "Ref": "ChatbotVpcPrivateSubnet1RouteTable8B6124CE"
+    },
+    "SubnetId": {
+     "Ref": "ChatbotVpcPrivateSubnet1Subnet88661181"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet1/RouteTableAssociation"
+   }
+  },
+  "ChatbotVpcPrivateSubnet2Subnet3985DB03": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "AvailabilityZone": "eu-west-2b",
+    "CidrBlock": "10.0.1.0/24",
+    "MapPublicIpOnLaunch": false,
+    "Tags": [
+     {
+      "Key": "aws-cdk:subnet-name",
+      "Value": "Private"
+     },
+     {
+      "Key": "aws-cdk:subnet-type",
+      "Value": "Isolated"
+     },
+     {
+      "Key": "Name",
+      "Value": "ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet2"
+     }
+    ],
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet2/Subnet"
+   }
+  },
+  "ChatbotVpcPrivateSubnet2RouteTable05FF211C": {
+   "Type": "AWS::EC2::RouteTable",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet2"
+     }
+    ],
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet2/RouteTable"
+   }
+  },
+  "ChatbotVpcPrivateSubnet2RouteTableAssociationB057B4DE": {
+   "Type": "AWS::EC2::SubnetRouteTableAssociation",
+   "Properties": {
+    "RouteTableId": {
+     "Ref": "ChatbotVpcPrivateSubnet2RouteTable05FF211C"
+    },
+    "SubnetId": {
+     "Ref": "ChatbotVpcPrivateSubnet2Subnet3985DB03"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet2/RouteTableAssociation"
+   }
+  },
+  "ChatbotVpcVpceS3245B9187": {
+   "Type": "AWS::EC2::VPCEndpoint",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:GetBucketLocation",
+        "s3:PutObject"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "AllowS3DataLakeAccess"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyInsecureTransport"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "RouteTableIds": [
+     {
+      "Ref": "ChatbotVpcPrivateSubnet1RouteTable8B6124CE"
+     },
+     {
+      "Ref": "ChatbotVpcPrivateSubnet2RouteTable05FF211C"
+     }
+    ],
+    "ServiceName": {
+     "Fn::Join": [
+      "",
+      [
+       "com.amazonaws.",
+       {
+        "Ref": "AWS::Region"
+       },
+       ".s3"
+      ]
+     ]
+    },
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "chatbot-vpc"
+     }
+    ],
+    "VpcEndpointType": "Gateway",
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/ChatbotVpc/VpceS3/Resource"
+   }
+  },
+  "SgAlbEA3AC417": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "Internal ALB - allows HTTPS 443 from corporate CIDR only",
+    "GroupName": "sg-alb",
+    "SecurityGroupIngress": [
+     {
+      "CidrIp": "10.0.0.0/8",
+      "Description": "Allow HTTPS from corporate network",
+      "FromPort": 443,
+      "IpProtocol": "tcp",
+      "ToPort": 443
+     }
+    ],
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/SgAlb/Resource"
+   }
+  },
+  "SgAlbtoChatbotNetworkingStackSgFastapi9CC2494780008EE53F69": {
+   "Type": "AWS::EC2::SecurityGroupEgress",
+   "Properties": {
+    "Description": "Allow egress to FastAPI on port 8000",
+    "DestinationSecurityGroupId": {
+     "Fn::GetAtt": [
+      "SgFastapi4E58613D",
+      "GroupId"
+     ]
+    },
+    "FromPort": 8000,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "SgAlbEA3AC417",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "ToPort": 8000
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/SgAlb/to ChatbotNetworkingStackSgFastapi9CC24947:8000"
+   }
+  },
+  "SgFastapi4E58613D": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "FastAPI ECS tasks - allows port 8000 from sg-alb only",
+    "GroupName": "sg-fastapi",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow HTTPS egress to VPC endpoints",
+      "FromPort": 443,
+      "IpProtocol": "tcp",
+      "ToPort": 443
+     }
+    ],
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/SgFastapi/Resource"
+   }
+  },
+  "SgFastapifromChatbotNetworkingStackSgAlb90F02668800060935D67": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "Allow traffic from ALB on port 8000",
+    "FromPort": 8000,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "SgFastapi4E58613D",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "SourceSecurityGroupId": {
+     "Fn::GetAtt": [
+      "SgAlbEA3AC417",
+      "GroupId"
+     ]
+    },
+    "ToPort": 8000
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/SgFastapi/from ChatbotNetworkingStackSgAlb90F02668:8000"
+   }
+  },
+  "SgVpce0888899C": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "VPC Endpoints - allows HTTPS 443 from sg-fastapi only",
+    "GroupName": "sg-vpce",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "255.255.255.255/32",
+      "Description": "Disallow all traffic",
+      "FromPort": 252,
+      "IpProtocol": "icmp",
+      "ToPort": 86
+     }
+    ],
+    "SecurityGroupIngress": [
+     {
+      "CidrIp": {
+       "Fn::GetAtt": [
+        "ChatbotVpcD40225CB",
+        "CidrBlock"
+       ]
+      },
+      "Description": {
+       "Fn::Join": [
+        "",
+        [
+         "from ",
+         {
+          "Fn::GetAtt": [
+           "ChatbotVpcD40225CB",
+           "CidrBlock"
+          ]
+         },
+         ":443"
+        ]
+       ]
+      },
+      "FromPort": 443,
+      "IpProtocol": "tcp",
+      "ToPort": 443
+     }
+    ],
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/SgVpce/Resource"
+   }
+  },
+  "SgVpcefromChatbotNetworkingStackSgFastapi9CC24947443F2854388": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "Allow HTTPS from FastAPI security group",
+    "FromPort": 443,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "SgVpce0888899C",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "SourceSecurityGroupId": {
+     "Fn::GetAtt": [
+      "SgFastapi4E58613D",
+      "GroupId"
+     ]
+    },
+    "ToPort": 443
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/SgVpce/from ChatbotNetworkingStackSgFastapi9CC24947:443"
+   }
+  },
+  "VpceBedrockRuntime280E15CF": {
+   "Type": "AWS::EC2::VPCEndpoint",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:ApplyGuardrail"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "AllowBedrockInvoke"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyNonSecureTransport"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "NumericLessThan": {
+         "s3:TlsVersion": "1.2"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyTLSBelow12"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PrivateDnsEnabled": true,
+    "SecurityGroupIds": [
+     {
+      "Fn::GetAtt": [
+       "SgVpce0888899C",
+       "GroupId"
+      ]
+     }
+    ],
+    "ServiceName": "com.amazonaws.eu-west-2.bedrock-runtime",
+    "SubnetIds": [
+     {
+      "Ref": "ChatbotVpcPrivateSubnet1Subnet88661181"
+     },
+     {
+      "Ref": "ChatbotVpcPrivateSubnet2Subnet3985DB03"
+     }
+    ],
+    "VpcEndpointType": "Interface",
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/VpceBedrockRuntime/Resource"
+   }
+  },
+  "VpceAthena49939E26": {
+   "Type": "AWS::EC2::VPCEndpoint",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "athena:StartQueryExecution",
+        "athena:GetQueryExecution",
+        "athena:GetQueryResults",
+        "athena:StopQueryExecution",
+        "athena:GetWorkGroup"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "AllowAthenaReadOnly"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyNonSecureTransport"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "NumericLessThan": {
+         "s3:TlsVersion": "1.2"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyTLSBelow12"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PrivateDnsEnabled": true,
+    "SecurityGroupIds": [
+     {
+      "Fn::GetAtt": [
+       "SgVpce0888899C",
+       "GroupId"
+      ]
+     }
+    ],
+    "ServiceName": "com.amazonaws.eu-west-2.athena",
+    "SubnetIds": [
+     {
+      "Ref": "ChatbotVpcPrivateSubnet1Subnet88661181"
+     },
+     {
+      "Ref": "ChatbotVpcPrivateSubnet2Subnet3985DB03"
+     }
+    ],
+    "VpcEndpointType": "Interface",
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/VpceAthena/Resource"
+   }
+  },
+  "VpceGlue796DD379": {
+   "Type": "AWS::EC2::VPCEndpoint",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "glue:GetDatabase",
+        "glue:GetDatabases",
+        "glue:GetTable",
+        "glue:GetTables",
+        "glue:GetPartition",
+        "glue:GetPartitions"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "AllowGlueCatalogRead"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyNonSecureTransport"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "NumericLessThan": {
+         "s3:TlsVersion": "1.2"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyTLSBelow12"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PrivateDnsEnabled": true,
+    "SecurityGroupIds": [
+     {
+      "Fn::GetAtt": [
+       "SgVpce0888899C",
+       "GroupId"
+      ]
+     }
+    ],
+    "ServiceName": "com.amazonaws.eu-west-2.glue",
+    "SubnetIds": [
+     {
+      "Ref": "ChatbotVpcPrivateSubnet1Subnet88661181"
+     },
+     {
+      "Ref": "ChatbotVpcPrivateSubnet2Subnet3985DB03"
+     }
+    ],
+    "VpcEndpointType": "Interface",
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/VpceGlue/Resource"
+   }
+  },
+  "VpceSecretsManager937C6ECA": {
+   "Type": "AWS::EC2::VPCEndpoint",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:PutSecretValue",
+        "secretsmanager:DeleteSecret"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "AllowSecretsManagerAccess"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyNonSecureTransport"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "NumericLessThan": {
+         "s3:TlsVersion": "1.2"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyTLSBelow12"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PrivateDnsEnabled": true,
+    "SecurityGroupIds": [
+     {
+      "Fn::GetAtt": [
+       "SgVpce0888899C",
+       "GroupId"
+      ]
+     }
+    ],
+    "ServiceName": "com.amazonaws.eu-west-2.secretsmanager",
+    "SubnetIds": [
+     {
+      "Ref": "ChatbotVpcPrivateSubnet1Subnet88661181"
+     },
+     {
+      "Ref": "ChatbotVpcPrivateSubnet2Subnet3985DB03"
+     }
+    ],
+    "VpcEndpointType": "Interface",
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/VpceSecretsManager/Resource"
+   }
+  },
+  "VpceKms202FC2BE": {
+   "Type": "AWS::EC2::VPCEndpoint",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "kms:Decrypt",
+        "kms:Encrypt",
+        "kms:GenerateDataKey",
+        "kms:DescribeKey"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "AllowKmsOperations"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyNonSecureTransport"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "NumericLessThan": {
+         "s3:TlsVersion": "1.2"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyTLSBelow12"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PrivateDnsEnabled": true,
+    "SecurityGroupIds": [
+     {
+      "Fn::GetAtt": [
+       "SgVpce0888899C",
+       "GroupId"
+      ]
+     }
+    ],
+    "ServiceName": "com.amazonaws.eu-west-2.kms",
+    "SubnetIds": [
+     {
+      "Ref": "ChatbotVpcPrivateSubnet1Subnet88661181"
+     },
+     {
+      "Ref": "ChatbotVpcPrivateSubnet2Subnet3985DB03"
+     }
+    ],
+    "VpcEndpointType": "Interface",
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/VpceKms/Resource"
+   }
+  },
+  "VpceCloudWatchLogsF8075989": {
+   "Type": "AWS::EC2::VPCEndpoint",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "AllowCloudWatchLogs"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyNonSecureTransport"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "NumericLessThan": {
+         "s3:TlsVersion": "1.2"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyTLSBelow12"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PrivateDnsEnabled": true,
+    "SecurityGroupIds": [
+     {
+      "Fn::GetAtt": [
+       "SgVpce0888899C",
+       "GroupId"
+      ]
+     }
+    ],
+    "ServiceName": "com.amazonaws.eu-west-2.logs",
+    "SubnetIds": [
+     {
+      "Ref": "ChatbotVpcPrivateSubnet1Subnet88661181"
+     },
+     {
+      "Ref": "ChatbotVpcPrivateSubnet2Subnet3985DB03"
+     }
+    ],
+    "VpcEndpointType": "Interface",
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/VpceCloudWatchLogs/Resource"
+   }
+  },
+  "VpceCloudWatchMonitoring20CFF624": {
+   "Type": "AWS::EC2::VPCEndpoint",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "cloudwatch:PutMetricData",
+        "cloudwatch:GetMetricData",
+        "cloudwatch:DescribeAlarms"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "AllowCloudWatchMetrics"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyNonSecureTransport"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "NumericLessThan": {
+         "s3:TlsVersion": "1.2"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyTLSBelow12"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PrivateDnsEnabled": true,
+    "SecurityGroupIds": [
+     {
+      "Fn::GetAtt": [
+       "SgVpce0888899C",
+       "GroupId"
+      ]
+     }
+    ],
+    "ServiceName": "com.amazonaws.eu-west-2.monitoring",
+    "SubnetIds": [
+     {
+      "Ref": "ChatbotVpcPrivateSubnet1Subnet88661181"
+     },
+     {
+      "Ref": "ChatbotVpcPrivateSubnet2Subnet3985DB03"
+     }
+    ],
+    "VpcEndpointType": "Interface",
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/VpceCloudWatchMonitoring/Resource"
+   }
+  },
+  "VpceOpenSearchServerless397E48AD": {
+   "Type": "AWS::EC2::VPCEndpoint",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "aoss:APIAccessAll",
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "AllowOpenSearchAccess"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyInsecureTransportOpenSearch"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PrivateDnsEnabled": true,
+    "SecurityGroupIds": [
+     {
+      "Fn::GetAtt": [
+       "SgVpce0888899C",
+       "GroupId"
+      ]
+     }
+    ],
+    "ServiceName": "com.amazonaws.eu-west-2.aoss",
+    "SubnetIds": [
+     {
+      "Ref": "ChatbotVpcPrivateSubnet1Subnet88661181"
+     },
+     {
+      "Ref": "ChatbotVpcPrivateSubnet2Subnet3985DB03"
+     }
+    ],
+    "VpcEndpointType": "Interface",
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/VpceOpenSearchServerless/Resource"
+   }
+  },
+  "VpceCognitoE90138D0": {
+   "Type": "AWS::EC2::VPCEndpoint",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "cognito-idp:GetUser",
+        "cognito-idp:InitiateAuth",
+        "cognito-idp:RespondToAuthChallenge",
+        "cognito-idp:RevokeToken",
+        "cognito-idp:GlobalSignOut"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "AllowCognitoOperations"
+      },
+      {
+       "Action": "*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": "*",
+       "Sid": "DenyInsecureTransportCognito"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PrivateDnsEnabled": true,
+    "SecurityGroupIds": [
+     {
+      "Fn::GetAtt": [
+       "SgVpce0888899C",
+       "GroupId"
+      ]
+     }
+    ],
+    "ServiceName": "com.amazonaws.eu-west-2.cognito-idp",
+    "SubnetIds": [
+     {
+      "Ref": "ChatbotVpcPrivateSubnet1Subnet88661181"
+     },
+     {
+      "Ref": "ChatbotVpcPrivateSubnet2Subnet3985DB03"
+     }
+    ],
+    "VpcEndpointType": "Interface",
+    "VpcId": {
+     "Ref": "ChatbotVpcD40225CB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/VpceCognito/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/33OTWsCQQwG4N/ifXaqS+29iIinyq7stWSzUeJHZphkXET876VauoLgKW+ew5uUvvyY+PEIei2w2xcHbv2lNsC9g16/CUt/aSK62Uaa1cytEp/AqM6tkP3ikKqQjdbQHmjwwT5VAzIYB3ELMOrh3EScSxcDi/3V/681YU5s50UKOd7qXsJ8m0j1iZdy96UYpQ0gPVy8uoo05IS3b7+yxWxXJ6Ejv9O3U/nuJ1M/Hu2UuUhZjI/kq/v8AVcEUg4zAQAA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatbotNetworkingStack/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "VpcId": {
+   "Description": "Chatbot VPC ID",
+   "Value": {
+    "Ref": "ChatbotVpcD40225CB"
+   },
+   "Export": {
+    "Name": "ChatbotVpcId"
+   }
+  },
+  "SgAlbId": {
+   "Description": "ALB Security Group ID",
+   "Value": {
+    "Fn::GetAtt": [
+     "SgAlbEA3AC417",
+     "GroupId"
+    ]
+   },
+   "Export": {
+    "Name": "ChatbotSgAlbId"
+   }
+  },
+  "SgFastapiId": {
+   "Description": "FastAPI Security Group ID",
+   "Value": {
+    "Fn::GetAtt": [
+     "SgFastapi4E58613D",
+     "GroupId"
+    ]
+   },
+   "Export": {
+    "Name": "ChatbotSgFastapiId"
+   }
+  },
+  "SgVpceId": {
+   "Description": "VPC Endpoints Security Group ID",
+   "Value": {
+    "Fn::GetAtt": [
+     "SgVpce0888899C",
+     "GroupId"
+    ]
+   },
+   "Export": {
+    "Name": "ChatbotSgVpceId"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

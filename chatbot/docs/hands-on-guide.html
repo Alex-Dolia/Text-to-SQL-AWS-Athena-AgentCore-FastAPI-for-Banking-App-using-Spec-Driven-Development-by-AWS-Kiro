@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hands-On Lab — AWS Setup: Athena, Cognito, Cedar &amp; FastAPI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --slate-900: #0f172a; --slate-800: #1e293b; --slate-700: #334155;
+  --slate-600: #475569; --slate-500: #64748b; --slate-400: #94a3b8;
+  --slate-300: #cbd5e1; --slate-200: #e2e8f0; --slate-100: #f1f5f9;
+  --slate-50: #f8fafc; --white: #ffffff;
+  --green-600: #16a34a; --green-500: #22c55e; --green-100: #dcfce7;
+  --amber-500: #f59e0b; --amber-400: #fbbf24; --amber-200: #fde68a;
+  --red-500: #ef4444; --red-100: #fee2e2;
+  --blue-500: #3b82f6; --blue-100: #dbeafe;
+  --font-sans: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 4px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font-sans); background: var(--slate-50); color: var(--slate-800); line-height: 1.7; font-size: 15px; }
+::selection { background: var(--amber-200); color: var(--slate-900); }
+
+/* NAV */
+nav.sidebar {
+  position: fixed; top: 0; left: 0; width: 270px; height: 100vh;
+  overflow-y: auto; background: var(--slate-900); color: var(--slate-300);
+  padding: 24px 0; z-index: 100; border-right: 1px solid var(--slate-700);
+}
+nav.sidebar::-webkit-scrollbar { width: 5px; }
+nav.sidebar::-webkit-scrollbar-thumb { background: var(--slate-600); border-radius: 3px; }
+.nav-brand { padding: 0 18px 18px; border-bottom: 1px solid var(--slate-700); margin-bottom: 14px; }
+.nav-brand .kicker { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green-500); }
+.nav-brand h1 { font-size: 0.95rem; font-weight: 700; color: var(--white); margin-top: 6px; line-height: 1.3; }
+.nav-group { margin-bottom: 4px; }
+.nav-group-label { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber-400); padding: 12px 18px 5px; }
+nav.sidebar a { display: block; padding: 6px 18px 6px 22px; color: var(--slate-400); text-decoration: none; font-size: 0.8rem; border-left: 2px solid transparent; transition: all 0.12s; }
+nav.sidebar a:hover { color: var(--white); background: rgba(255,255,255,0.03); }
+nav.sidebar a.active { color: var(--white); border-left-color: var(--green-500); background: rgba(34,197,94,0.06); }
+
+/* MAIN */
+main { margin-left: 270px; min-height: 100vh; }
+
+/* HERO */
+.hero { background: var(--slate-900); padding: 70px 56px 56px; color: var(--white); border-bottom: 3px solid var(--green-500); }
+.hero .kicker { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green-500); margin-bottom: 12px; }
+.hero h1 { font-size: 2.4rem; font-weight: 700; line-height: 1.12; max-width: 700px; margin-bottom: 16px; }
+.hero h1 em { color: var(--green-500); font-style: normal; }
+.hero .lede { font-size: 1rem; color: var(--slate-300); max-width: 600px; }
+
+/* SECTIONS */
+section { padding: 50px 56px; border-bottom: 1px solid var(--slate-200); max-width: 880px; }
+.section-label { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--slate-500); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+.section-label::before { content: ""; display: inline-block; width: 18px; height: 2px; background: var(--green-500); }
+h2 { font-size: 1.6rem; font-weight: 700; color: var(--slate-900); margin-bottom: 14px; }
+h3 { font-size: 1.15rem; font-weight: 600; color: var(--slate-800); margin: 28px 0 10px; }
+h4 { font-size: 0.95rem; font-weight: 600; color: var(--slate-700); margin: 18px 0 8px; }
+p { margin-bottom: 12px; max-width: 70ch; }
+ul, ol { margin: 0 0 14px; padding-left: 20px; }
+li { margin-bottom: 5px; max-width: 66ch; }
+strong { color: var(--slate-900); }
+a { color: var(--slate-700); text-decoration: underline; text-decoration-color: var(--slate-300); }
+
+/* CODE */
+pre { background: var(--slate-900); color: var(--slate-200); font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.6; padding: 16px 18px; border-radius: var(--radius); overflow-x: auto; margin: 12px 0 18px; border: 1px solid var(--slate-700); }
+code { font-family: var(--font-mono); font-size: 0.84em; background: var(--slate-200); padding: 1px 5px; border-radius: 2px; }
+pre code { background: none; padding: 0; font-size: 1em; }
+.kw { color: var(--amber-400); }
+.str { color: var(--green-500); }
+.cm { color: var(--slate-500); }
+.num { color: var(--blue-500); }
+
+/* TABLES */
+table { width: 100%; border-collapse: collapse; margin: 14px 0 20px; font-size: 0.86rem; }
+th, td { text-align: left; padding: 9px 12px; border: 1px solid var(--slate-200); vertical-align: top; }
+th { background: var(--slate-900); color: var(--amber-400); font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.05em; text-transform: uppercase; }
+tr:nth-child(even) td { background: var(--white); }
+
+/* CALLOUTS */
+.callout { border-left: 3px solid var(--green-500); background: var(--white); padding: 14px 18px; margin: 16px 0; border-radius: 0 var(--radius) var(--radius) 0; }
+.callout-label { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green-600); font-weight: 600; margin-bottom: 5px; }
+.callout.warn { border-left-color: var(--red-500); }
+.callout.warn .callout-label { color: var(--red-500); }
+.callout.info { border-left-color: var(--blue-500); }
+.callout.info .callout-label { color: var(--blue-500); }
+
+/* STEP COUNTER */
+.step-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--green-500); color: var(--white); font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; margin-right: 10px; flex-shrink: 0; }
+
+/* BACK TO TOP */
+.back-top { position: fixed; bottom: 20px; right: 20px; background: var(--slate-900); color: var(--green-500); font-family: var(--font-mono); font-size: 0.66rem; padding: 9px 12px; border-radius: var(--radius); text-decoration: none; border: 1px solid var(--slate-700); opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 50; }
+.back-top.show { opacity: 1; pointer-events: auto; }
+
+/* MOBILE */
+.menu-toggle { display: none; }
+footer { padding: 36px 56px; color: var(--slate-500); font-size: 0.8rem; border-top: 1px solid var(--slate-200); }
+@media (max-width: 800px) {
+  nav.sidebar { position: fixed; transform: translateX(-100%); transition: transform 0.2s; width: 82vw; max-width: 280px; }
+  nav.sidebar.open { transform: translateX(0); }
+  main { margin-left: 0; }
+  .hero { padding: 60px 20px 44px; }
+  .hero h1 { font-size: 1.8rem; }
+  section { padding: 36px 20px; }
+  .menu-toggle { display: block; position: fixed; top: 12px; left: 12px; z-index: 110; background: var(--slate-900); color: var(--green-500); border: 1px solid var(--slate-700); font-family: var(--font-mono); font-size: 0.7rem; padding: 7px 11px; border-radius: var(--radius); cursor: pointer; }
+  footer { padding: 28px 20px; }
+}
+</style>
+</head>
+<body>
+<button class="menu-toggle" onclick="document.querySelector('nav.sidebar').classList.toggle('open')">&#9776; NAV</button>
+
+<nav class="sidebar" id="sidebar">
+  <div class="nav-brand">
+    <div class="kicker">Hands-On Lab</div>
+    <h1>AWS Setup for the Athena Chatbot</h1>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Prerequisites</div>
+    <a href="#prereqs">Tools &amp; accounts</a>
+    <a href="#project">Python project setup</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Lab 1 &middot; Athena</div>
+    <a href="#s3-upload">Upload CSV to S3</a>
+    <a href="#glue-db">Create Glue database</a>
+    <a href="#athena-table">CREATE TABLE (SQL)</a>
+    <a href="#athena-python">Athena via Python</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Lab 2 &middot; Cognito</div>
+    <a href="#cognito-pool">Create User Pool</a>
+    <a href="#cognito-client">App client &amp; domain</a>
+    <a href="#cognito-saml">SAML federation</a>
+    <a href="#cognito-python">Cognito via Python</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Lab 3 &middot; Cedar / Policy</div>
+    <a href="#cedar-intro">What Cedar is</a>
+    <a href="#cedar-write">Writing policies</a>
+    <a href="#cedar-deploy">Deploy via CLI/Python</a>
+    <a href="#cedar-where">Where policies live</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Lab 4 &middot; FastAPI</div>
+    <a href="#fastapi-scaffold">Scaffold the app</a>
+    <a href="#fastapi-auth">JWT validation</a>
+    <a href="#fastapi-run">Run locally</a>
+    <a href="#fastapi-test">Test end-to-end</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Reference</div>
+    <a href="#summary">Summary &amp; next steps</a>
+  </div>
+</nav>
+
+<main>
+
+<div class="hero">
+<div class="kicker">Practical Lab Guide</div>
+<h1>Setting Up <em>AWS Services</em> for the Athena Chatbot</h1>
+<p class="lede">After you've created your Python project, this guide walks you through every AWS service setup step-by-step &mdash; with real AWS CLI commands, Python (boto3) code, and SQL statements you can copy and run.</p>
+</div>
+
+<!-- ========== PREREQUISITES ========== -->
+<section id="prereqs">
+<div class="section-label">Prerequisites</div>
+<h2>Tools &amp; Accounts You Need</h2>
+<table>
+<tr><th>Tool</th><th>Install</th><th>Verify</th></tr>
+<tr><td>AWS CLI v2</td><td><code>msiexec /i https://awscli.amazonaws.com/AWSCLIV2.msi</code></td><td><code>aws --version</code></td></tr>
+<tr><td>Python 3.11+</td><td><a href="https://python.org">python.org</a></td><td><code>python --version</code></td></tr>
+<tr><td>boto3</td><td><code>pip install boto3</code></td><td><code>python -c "import boto3; print(boto3.__version__)"</code></td></tr>
+<tr><td>AWS account</td><td>With permissions for S3, Athena, Glue, Cognito, Bedrock AgentCore</td><td><code>aws sts get-caller-identity</code></td></tr>
+</table>
+<h3>Configure AWS CLI</h3>
+<pre><code><span class="cm"># Set your region and credentials</span>
+aws configure
+<span class="cm"># AWS Access Key ID: &lt;your-key&gt;</span>
+<span class="cm"># AWS Secret Access Key: &lt;your-secret&gt;</span>
+<span class="cm"># Default region name: eu-west-2  (or your bank's region)</span>
+<span class="cm"># Default output format: json</span></code></pre>
+</section>
+
+<section id="project">
+<h2>Python Project Setup</h2>
+<p>Assuming you already have a project folder. Here's the minimal structure we'll build on:</p>
+<pre><code>athena-chatbot/
+├── api/
+│   ├── __init__.py
+│   ├── main.py          <span class="cm"># FastAPI app</span>
+│   ├── auth.py          <span class="cm"># JWT validation</span>
+│   └── config.py        <span class="cm"># Settings</span>
+├── scripts/
+│   ├── setup_athena.py  <span class="cm"># Athena table creation</span>
+│   ├── setup_cognito.py <span class="cm"># Cognito provisioning</span>
+│   └── setup_cedar.py   <span class="cm"># Cedar policy deployment</span>
+├── policies/
+│   └── chatbot.cedar    <span class="cm"># Cedar policy files</span>
+├── data/
+│   └── sample.csv       <span class="cm"># Sample CSV for testing</span>
+├── requirements.txt
+└── pyproject.toml</code></pre>
+<h3>requirements.txt</h3>
+<pre><code>fastapi==0.115.0
+uvicorn[standard]==0.30.0
+boto3==1.35.0
+python-jose[cryptography]==3.3.0
+httpx==0.27.0
+pydantic==2.9.0
+pydantic-settings==2.5.0</code></pre>
+<pre><code><span class="cm"># Install dependencies</span>
+pip install -r requirements.txt</code></pre>
+</section>
+
+<!-- ========== LAB 1: ATHENA ========== -->
+<section id="s3-upload">
+<div class="section-label">Lab 1 &mdash; Athena Tables from CSV</div>
+<h2><span class="step-num">1</span>Upload CSV Files to S3</h2>
+<p>Athena queries data stored in S3. Your CSV files must be in a bucket before you can create tables over them.</p>
+
+<h3>Sample CSV (data/orders.csv)</h3>
+<pre><code>order_id,customer_id,order_date,amount,region,product_category
+1001,C-2341,2025-01-15,1250.00,EMEA,Fixed Income
+1002,C-1892,2025-01-16,3400.50,APAC,Equities
+1003,C-0045,2025-01-16,890.25,EMEA,Derivatives
+1004,C-2341,2025-01-17,5600.00,AMER,Fixed Income
+1005,C-1100,2025-01-18,2100.75,EMEA,Equities</code></pre>
+
+<h3>AWS CLI: Create bucket &amp; upload</h3>
+<pre><code><span class="cm"># Create the data lake bucket (use your own unique name)</span>
+aws s3 mb s3://natwest-datalake-dev-eu-west-2 --region eu-west-2
+
+<span class="cm"># Upload CSV files (organized by database/table/)</span>
+aws s3 cp data/orders.csv s3://natwest-datalake-dev-eu-west-2/trading/orders/orders.csv
+
+<span class="cm"># Upload multiple CSVs at once</span>
+aws s3 sync data/ s3://natwest-datalake-dev-eu-west-2/trading/orders/ \
+  --exclude "*" --include "*.csv"
+
+<span class="cm"># Verify upload</span>
+aws s3 ls s3://natwest-datalake-dev-eu-west-2/trading/orders/</code></pre>
+
+<h3>Python (boto3): Upload programmatically</h3>
+<pre><code><span class="cm"># scripts/upload_csv.py</span>
+<span class="cm"># Purpose: Upload local CSV files to S3 so Athena can query them.</span>
+<span class="cm"># Athena reads data directly from S3 — this script puts it there.</span>
+
+<span class="kw">import</span> boto3              <span class="cm"># AWS SDK for Python — lets us call S3 APIs</span>
+<span class="kw">from</span> pathlib <span class="kw">import</span> Path  <span class="cm"># Modern file path handling (cross-platform)</span>
+
+<span class="cm"># Create an S3 client — this handles authentication automatically</span>
+<span class="cm"># using credentials from 'aws configure' or environment variables</span>
+s3 = boto3.client(<span class="str">'s3'</span>, region_name=<span class="str">'eu-west-2'</span>)
+
+BUCKET = <span class="str">'natwest-datalake-dev-eu-west-2'</span>  <span class="cm"># Target S3 bucket name (must be globally unique)</span>
+DATA_DIR = Path(<span class="str">'data'</span>)                     <span class="cm"># Local folder containing your CSV files</span>
+
+<span class="cm"># Create the S3 bucket if it doesn't already exist</span>
+<span class="cm"># LocationConstraint is required for any region other than us-east-1</span>
+<span class="kw">try</span>:
+    s3.create_bucket(
+        Bucket=BUCKET,                                                  <span class="cm"># Bucket name</span>
+        CreateBucketConfiguration={<span class="str">'LocationConstraint'</span>: <span class="str">'eu-west-2'</span>}  <span class="cm"># Region where bucket lives</span>
+    )
+    print(f<span class="str">"Created bucket: {BUCKET}"</span>)
+<span class="kw">except</span> s3.exceptions.BucketAlreadyOwnedByYou:  <span class="cm"># Safe to ignore if we already own it</span>
+    print(f<span class="str">"Bucket already exists: {BUCKET}"</span>)
+
+<span class="cm"># Upload every .csv file from the local data/ folder to S3</span>
+<span class="cm"># Files are organized as: s3://bucket/database/table/filename.csv</span>
+<span class="cm"># This path structure matches what Athena's LOCATION will point to</span>
+<span class="kw">for</span> csv_file <span class="kw">in</span> DATA_DIR.glob(<span class="str">'*.csv'</span>):           <span class="cm"># Find all CSV files in data/</span>
+    key = f<span class="str">"trading/orders/{csv_file.name}"</span>        <span class="cm"># S3 key (path inside the bucket)</span>
+    s3.upload_file(str(csv_file), BUCKET, key)      <span class="cm"># Upload local file → S3</span>
+    print(f<span class="str">"Uploaded: {csv_file.name} → s3://{BUCKET}/{key}"</span>)</code></pre>
+
+<div class="callout info">
+<div class="callout-label">Bank best practice</div>
+In production, enable S3 bucket encryption (SSE-KMS with a customer-managed key), versioning, and block all public access. For this lab, we keep it simple.
+</div>
+</section>
+
+<section id="glue-db">
+<h2><span class="step-num">2</span>Create a Glue Database</h2>
+<p>Athena uses the AWS Glue Data Catalog as its metadata store. Tables belong to databases in the catalog.</p>
+
+<h3>AWS CLI</h3>
+<pre><code><span class="cm"># Create a Glue database — this is a metadata container for tables.</span>
+<span class="cm"># It does NOT create storage. Think of it like CREATE SCHEMA in PostgreSQL.</span>
+aws glue create-database --database-input '{
+  "Name": "trading",
+  "Description": "Trading data lake - orders, positions, clients"
+}' --region eu-west-2
+
+<span class="cm"># Verify the database was created successfully</span>
+aws glue get-database --name trading --region eu-west-2</code></pre>
+
+<h3>Python (boto3)</h3>
+<pre><code><span class="cm"># scripts/setup_athena.py (excerpt — database creation only)</span>
+<span class="cm"># This snippet shows just the database creation part.</span>
+<span class="cm"># The full script (step 4) combines this with table creation + test query.</span>
+
+<span class="kw">import</span> boto3  <span class="cm"># AWS SDK — handles auth and API calls</span>
+
+<span class="cm"># Connect to the Glue service (manages the Data Catalog)</span>
+glue = boto3.client(<span class="str">'glue'</span>, region_name=<span class="str">'eu-west-2'</span>)
+
+<span class="cm"># Create the database in the Glue Data Catalog</span>
+<span class="cm"># DatabaseInput is a dict with metadata about the database</span>
+glue.create_database(
+    DatabaseInput={
+        <span class="str">'Name'</span>: <span class="str">'trading'</span>,
+        <span class="str">'Description'</span>: <span class="str">'Trading data lake - orders, positions, clients'</span>
+    }
+)
+print(<span class="str">"Database 'trading' created in Glue Catalog"</span>)</code></pre>
+</section>
+
+<section id="athena-table">
+<h2><span class="step-num">3</span>CREATE TABLE for CSV in Athena</h2>
+<p>Now we tell Athena how to read our CSV files by creating an external table pointing to the S3 location.</p>
+
+<h3>SQL (run in Athena console or via CLI)</h3>
+<pre><code><span class="cm">-- Create table for CSV data with headers</span>
+<span class="kw">CREATE EXTERNAL TABLE IF NOT EXISTS</span> trading.orders (
+  order_id      <span class="str">STRING</span>,
+  customer_id   <span class="str">STRING</span>,
+  order_date    <span class="str">DATE</span>,
+  amount        <span class="str">DOUBLE</span>,
+  region        <span class="str">STRING</span>,
+  product_category <span class="str">STRING</span>
+)
+<span class="kw">ROW FORMAT DELIMITED</span>
+  <span class="kw">FIELDS TERMINATED BY</span> <span class="str">','</span>
+  <span class="kw">LINES TERMINATED BY</span> <span class="str">'\n'</span>
+<span class="kw">LOCATION</span> <span class="str">'s3://natwest-datalake-dev-eu-west-2/trading/orders/'</span>
+<span class="kw">TBLPROPERTIES</span> (
+  <span class="str">'skip.header.line.count'</span> = <span class="str">'1'</span>,
+  <span class="str">'classification'</span> = <span class="str">'csv'</span>
+);</code></pre>
+
+<div class="callout">
+<div class="callout-label">Key points</div>
+<ul>
+<li><code>skip.header.line.count = '1'</code> &mdash; skips the CSV header row</li>
+<li><code>ROW FORMAT DELIMITED FIELDS TERMINATED BY ','</code> &mdash; uses the LazySimpleSerDe (default for delimited data)</li>
+<li>If your CSV has quoted fields (commas inside values), use <code>ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'</code> instead</li>
+<li>LOCATION points to the S3 <strong>folder</strong>, not a specific file &mdash; Athena reads all files in that path</li>
+</ul>
+</div>
+
+<h3>For CSV with quoted fields (OpenCSVSerDe)</h3>
+<pre><code><span class="kw">CREATE EXTERNAL TABLE IF NOT EXISTS</span> trading.clients (
+  client_id     <span class="str">STRING</span>,
+  client_name   <span class="str">STRING</span>,
+  address       <span class="str">STRING</span>,    <span class="cm">-- may contain commas</span>
+  tier          <span class="str">STRING</span>,
+  onboard_date  <span class="str">STRING</span>     <span class="cm">-- OpenCSVSerDe treats all as STRING</span>
+)
+<span class="kw">ROW FORMAT SERDE</span> <span class="str">'org.apache.hadoop.hive.serde2.OpenCSVSerde'</span>
+<span class="kw">WITH SERDEPROPERTIES</span> (
+  <span class="str">'separatorChar'</span> = <span class="str">','</span>,
+  <span class="str">'quoteChar'</span>     = <span class="str">'"'</span>,
+  <span class="str">'escapeChar'</span>    = <span class="str">'\\'</span>
+)
+<span class="kw">LOCATION</span> <span class="str">'s3://natwest-datalake-dev-eu-west-2/trading/clients/'</span>
+<span class="kw">TBLPROPERTIES</span> (<span class="str">'skip.header.line.count'</span> = <span class="str">'1'</span>);</code></pre>
+
+<h3>AWS CLI: Run the CREATE TABLE</h3>
+<pre><code><span class="cm"># Run DDL via Athena CLI</span>
+aws athena start-query-execution \
+  --query-string "CREATE EXTERNAL TABLE IF NOT EXISTS trading.orders (
+    order_id STRING, customer_id STRING, order_date DATE,
+    amount DOUBLE, region STRING, product_category STRING
+  ) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+  LOCATION 's3://natwest-datalake-dev-eu-west-2/trading/orders/'
+  TBLPROPERTIES ('skip.header.line.count'='1')" \
+  --work-group "primary" \
+  --region eu-west-2
+
+<span class="cm"># Check execution status</span>
+aws athena get-query-execution \
+  --query-execution-id &lt;id-from-above&gt; \
+  --region eu-west-2
+
+<span class="cm"># Test: query the table</span>
+aws athena start-query-execution \
+  --query-string "SELECT * FROM trading.orders LIMIT 5" \
+  --work-group "primary" \
+  --result-configuration "OutputLocation=s3://natwest-datalake-dev-eu-west-2/query-results/" \
+  --region eu-west-2</code></pre>
+</section>
+
+<section id="athena-python">
+<h2><span class="step-num">4</span>Athena via Python (Complete Script)</h2>
+
+<p>This script automates everything from steps 2-3 into a single runnable Python file. Here's what it does:</p>
+
+<table>
+<tr><th>Function</th><th>What it does</th><th>AWS API calls</th></tr>
+<tr><td><code>create_database()</code></td><td>Creates the <code>trading</code> database in the Glue Data Catalog. If it already exists, skips without error.</td><td><code>glue.create_database()</code></td></tr>
+<tr><td><code>run_query(sql)</code></td><td>Submits any SQL statement to Athena, then <strong>polls every 1 second</strong> until the query completes (SUCCEEDED, FAILED, or CANCELLED). Returns the query execution ID for fetching results.</td><td><code>athena.start_query_execution()</code>, <code>athena.get_query_execution()</code></td></tr>
+<tr><td><code>create_orders_table()</code></td><td>Runs the <code>CREATE EXTERNAL TABLE</code> DDL that maps your CSV files in S3 to a queryable Athena table. Tells Athena: where the data is (S3 path), what format it's in (comma-delimited CSV), and to skip the header row.</td><td>Uses <code>run_query()</code> internally</td></tr>
+<tr><td><code>test_query()</code></td><td>Runs <code>SELECT * FROM trading.orders LIMIT 5</code> and prints the results to confirm everything works. This proves: S3 has data, Glue knows the schema, and Athena can read the CSV.</td><td><code>athena.get_query_results()</code></td></tr>
+</table>
+
+<div class="callout">
+<div class="callout-label">How it works end-to-end</div>
+<ol>
+<li>Script connects to AWS using your configured credentials (<code>aws configure</code>)</li>
+<li>Creates the Glue database (metadata container for tables)</li>
+<li>Submits the CREATE TABLE DDL to Athena — this doesn't move or copy data, it just tells Athena "there are CSV files at this S3 path, here's how to read them"</li>
+<li>Athena registers the table in the Glue Data Catalog</li>
+<li>Runs a test query to prove the pipeline works</li>
+<li>Prints results to terminal — if you see your CSV data, everything is connected correctly</li>
+</ol>
+</div>
+
+<pre><code><span class="cm"># scripts/setup_athena.py — Full script: create DB, table, run test query</span>
+<span class="kw">import</span> boto3
+<span class="kw">import</span> time
+
+<span class="cm"># ─── CONFIGURATION ───────────────────────────────────────────────────</span>
+<span class="cm"># Change these values to match your AWS environment</span>
+REGION = <span class="str">'eu-west-2'</span>                          <span class="cm"># AWS region where your S3 bucket lives</span>
+BUCKET = <span class="str">'natwest-datalake-dev-eu-west-2'</span>      <span class="cm"># S3 bucket containing your CSV files</span>
+DATABASE = <span class="str">'trading'</span>                           <span class="cm"># Glue database name (logical grouping)</span>
+TABLE = <span class="str">'orders'</span>                               <span class="cm"># Table name that will appear in Athena</span>
+WORKGROUP = <span class="str">'primary'</span>                          <span class="cm"># Athena workgroup (controls cost/access)</span>
+OUTPUT_LOCATION = f<span class="str">'s3://{BUCKET}/query-results/'</span>  <span class="cm"># Where Athena writes query results</span>
+
+<span class="cm"># ─── AWS CLIENTS ─────────────────────────────────────────────────────</span>
+<span class="cm"># boto3 clients for the two services we interact with:</span>
+<span class="cm"># - Glue: manages the Data Catalog (databases + table metadata)</span>
+<span class="cm"># - Athena: runs SQL queries against data in S3</span>
+glue = boto3.client(<span class="str">'glue'</span>, region_name=REGION)
+athena = boto3.client(<span class="str">'athena'</span>, region_name=REGION)
+
+
+<span class="cm"># ─── FUNCTION 1: CREATE DATABASE ─────────────────────────────────────</span>
+<span class="cm"># A Glue database is just a logical container for tables.</span>
+<span class="cm"># Think of it like a schema in PostgreSQL — it groups related tables.</span>
+<span class="cm"># This does NOT create storage; it only creates a metadata entry.</span>
+<span class="kw">def</span> create_database():
+    <span class="str">"""Create Glue database if it doesn't exist."""</span>
+    <span class="kw">try</span>:
+        glue.create_database(
+            DatabaseInput={<span class="str">'Name'</span>: DATABASE, <span class="str">'Description'</span>: <span class="str">'Trading data lake'</span>}
+        )
+        print(f<span class="str">"✓ Database '{DATABASE}' created"</span>)
+    <span class="kw">except</span> glue.exceptions.AlreadyExistsException:
+        print(f<span class="str">"• Database '{DATABASE}' already exists"</span>)
+
+
+<span class="cm"># ─── FUNCTION 2: RUN QUERY ───────────────────────────────────────────</span>
+<span class="cm"># Athena queries are ASYNCHRONOUS. When you submit SQL:</span>
+<span class="cm">#   1. Athena returns immediately with a query ID</span>
+<span class="cm">#   2. The query runs in the background (may take seconds to minutes)</span>
+<span class="cm">#   3. You must poll get_query_execution() to check if it's done</span>
+<span class="cm">#   4. Once SUCCEEDED, you can fetch results with get_query_results()</span>
+<span class="cm"># This function handles steps 1-3 (submit + poll until done).</span>
+<span class="kw">def</span> run_query(sql: str) -> str:
+    <span class="str">"""Execute an Athena query and wait for results."""</span>
+    <span class="cm"># Step 1: Submit the query to Athena</span>
+    response = athena.start_query_execution(
+        QueryString=sql,                                   <span class="cm"># The SQL to run</span>
+        QueryExecutionContext={<span class="str">'Database'</span>: DATABASE},        <span class="cm"># Default database for unqualified table names</span>
+        WorkGroup=WORKGROUP,                               <span class="cm"># Controls concurrency limits and cost tracking</span>
+        ResultConfiguration={<span class="str">'OutputLocation'</span>: OUTPUT_LOCATION}  <span class="cm"># S3 path for result CSV files</span>
+    )
+    query_id = response[<span class="str">'QueryExecutionId'</span>]
+    print(f<span class="str">"  Query started: {query_id}"</span>)
+
+    <span class="cm"># Step 2: Poll until the query finishes (check every 1 second)</span>
+    <span class="kw">while True</span>:
+        status = athena.get_query_execution(QueryExecutionId=query_id)
+        state = status[<span class="str">'QueryExecution'</span>][<span class="str">'Status'</span>][<span class="str">'State'</span>]
+        <span class="kw">if</span> state <span class="kw">in</span> (<span class="str">'SUCCEEDED'</span>, <span class="str">'FAILED'</span>, <span class="str">'CANCELLED'</span>):
+            <span class="kw">break</span>
+        time.sleep(<span class="num">1</span>)  <span class="cm"># Wait 1 second before checking again</span>
+
+    <span class="cm"># Step 3: If query failed, raise an error with the reason</span>
+    <span class="kw">if</span> state != <span class="str">'SUCCEEDED'</span>:
+        reason = status[<span class="str">'QueryExecution'</span>][<span class="str">'Status'</span>].get(<span class="str">'StateChangeReason'</span>, <span class="str">'Unknown'</span>)
+        <span class="kw">raise</span> RuntimeError(f<span class="str">"Query failed: {reason}"</span>)
+
+    <span class="kw">return</span> query_id  <span class="cm"># Return ID so caller can fetch results</span>
+
+
+<span class="cm"># ─── FUNCTION 3: CREATE TABLE ────────────────────────────────────────</span>
+<span class="cm"># This is the key step. CREATE EXTERNAL TABLE tells Athena:</span>
+<span class="cm">#   - "There are files at this S3 location"</span>
+<span class="cm">#   - "They are CSV format (comma-delimited)"</span>
+<span class="cm">#   - "Here are the column names and types"</span>
+<span class="cm">#   - "Skip the first line (it's a header)"</span>
+<span class="cm"># IMPORTANT: This does NOT copy or move data. The CSV stays in S3.</span>
+<span class="cm"># Athena reads it directly from S3 every time you query.</span>
+<span class="kw">def</span> create_orders_table():
+    <span class="str">"""Create the orders table over CSV in S3."""</span>
+    ddl = f<span class="str">"""
+    CREATE EXTERNAL TABLE IF NOT EXISTS {DATABASE}.{TABLE} (
+      order_id         STRING,        -- column 1 from CSV
+      customer_id      STRING,        -- column 2 from CSV
+      order_date       DATE,          -- column 3 (Athena parses YYYY-MM-DD)
+      amount           DOUBLE,        -- column 4 (decimal number)
+      region           STRING,        -- column 5
+      product_category STRING         -- column 6
+    )
+    ROW FORMAT DELIMITED
+      FIELDS TERMINATED BY ','        -- CSV = comma-separated
+      LINES TERMINATED BY '\\n'       -- one row per line
+    LOCATION 's3://{BUCKET}/trading/orders/'   -- S3 folder with CSV files
+    TBLPROPERTIES ('skip.header.line.count' = '1')  -- skip header row
+    """</span>
+    run_query(ddl)
+    print(f<span class="str">"✓ Table '{DATABASE}.{TABLE}' created"</span>)
+
+
+<span class="cm"># ─── FUNCTION 4: TEST QUERY ──────────────────────────────────────────</span>
+<span class="cm"># Runs a simple SELECT to prove everything works:</span>
+<span class="cm">#   - S3 has the CSV data</span>
+<span class="cm">#   - Glue Catalog has the table metadata</span>
+<span class="cm">#   - Athena can parse the CSV using the schema we defined</span>
+<span class="cm"># If this returns data, your Athena setup is complete.</span>
+<span class="kw">def</span> test_query():
+    <span class="str">"""Run a test SELECT to verify data is accessible."""</span>
+    query_id = run_query(f<span class="str">"SELECT * FROM {DATABASE}.{TABLE} LIMIT 5"</span>)
+    <span class="cm"># Fetch the actual results using the query ID</span>
+    results = athena.get_query_results(QueryExecutionId=query_id)
+
+    print(<span class="str">"\n✓ Test query results:"</span>)
+    <span class="kw">for</span> row <span class="kw">in</span> results[<span class="str">'ResultSet'</span>][<span class="str">'Rows'</span>]:
+        <span class="cm"># Each row is a list of columns; extract the string value from each</span>
+        print(<span class="str">"  "</span> + <span class="str">" | "</span>.join(col.get(<span class="str">'VarCharValue'</span>, <span class="str">''</span>) <span class="kw">for</span> col <span class="kw">in</span> row[<span class="str">'Data'</span>]))
+
+
+<span class="kw">if</span> __name__ == <span class="str">'__main__'</span>:
+    create_database()
+    create_orders_table()
+    test_query()
+    print(<span class="str">"\n✓ Athena setup complete!"</span>)</code></pre>
+
+<h3>Run it</h3>
+<pre><code>python scripts/setup_athena.py</code></pre>
+
+<h3>Expected output</h3>
+<pre><code><span class="cm">✓ Database 'trading' created
+  Query started: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+✓ Table 'trading.orders' created
+  Query started: b2c3d4e5-f6a7-8901-bcde-f12345678901
+  
+✓ Test query results:
+  order_id | customer_id | order_date | amount | region | product_category
+  1001 | C-2341 | 2025-01-15 | 1250.0 | EMEA | Fixed Income
+  1002 | C-1892 | 2025-01-16 | 3400.5 | APAC | Equities
+  1003 | C-0045 | 2025-01-16 | 890.25 | EMEA | Derivatives
+  1004 | C-2341 | 2025-01-17 | 5600.0 | AMER | Fixed Income
+  1005 | C-1100 | 2025-01-18 | 2100.75 | EMEA | Equities
+
+✓ Athena setup complete!</span></code></pre>
+
+<h3>Common errors and fixes</h3>
+<table>
+<tr><th>Error</th><th>Cause</th><th>Fix</th></tr>
+<tr><td><code>AccessDeniedException</code></td><td>IAM user lacks Glue/Athena permissions</td><td>Add <code>AmazonAthenaFullAccess</code> and <code>AWSGlueConsoleFullAccess</code> policies to your user</td></tr>
+<tr><td><code>BucketAlreadyExists</code> (not OwnedByYou)</td><td>Someone else owns that bucket name</td><td>Change BUCKET to a unique name (e.g., add your account ID)</td></tr>
+<tr><td><code>Query failed: SYNTAX_ERROR</code></td><td>Typo in CREATE TABLE SQL</td><td>Check column types match CSV data. DATE requires YYYY-MM-DD format.</td></tr>
+<tr><td><code>HIVE_CANNOT_OPEN_SPLIT</code></td><td>S3 location doesn't have any files</td><td>Verify upload: <code>aws s3 ls s3://your-bucket/trading/orders/</code></td></tr>
+<tr><td>All rows show NULL</td><td>Header row counted as data OR wrong delimiter</td><td>Ensure <code>skip.header.line.count = '1'</code> is set</td></tr>
+</table>
+
+<div class="callout">
+<div class="callout-label">Partitioned tables (production)</div>
+For large tables, add partitions by date or region:
+<pre><code>CREATE EXTERNAL TABLE trading.orders (
+  order_id STRING, customer_id STRING, amount DOUBLE, product_category STRING
+)
+PARTITIONED BY (order_date DATE, region STRING)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+LOCATION 's3://bucket/trading/orders/'
+TBLPROPERTIES ('skip.header.line.count'='1');
+
+-- Then load partitions:
+MSCK REPAIR TABLE trading.orders;</code></pre>
+S3 structure: <code>s3://bucket/trading/orders/order_date=2025-01-15/region=EMEA/file.csv</code>
+</div>
+</section>
+
+<!-- ========== LAB 2: COGNITO ========== -->
+<section id="cognito-pool">
+<div class="section-label">Lab 2 &mdash; Amazon Cognito</div>
+<h2><span class="step-num">5</span>Create a Cognito User Pool</h2>
+<p>Cognito provides authentication and JWT token issuance. For a bank, you'll federate to your corporate IdP, but first let's create the User Pool itself.</p>
+
+<h3>AWS CLI: Create User Pool</h3>
+<pre><code><span class="cm"># Create a Cognito User Pool — this is your user directory + auth server.</span>
+<span class="cm"># It issues JWT tokens after authentication, which your API validates.</span>
+aws cognito-idp create-user-pool \
+  --pool-name "athena-chatbot-users" \             <span class="cm"># Human-readable name</span>
+  --policies '{
+    "PasswordPolicy": {
+      "MinimumLength": 12,                          
+      "RequireUppercase": true,                     
+      "RequireLowercase": true,                     
+      "RequireNumbers": true,                       
+      "RequireSymbols": true,                       
+      "TemporaryPasswordValidityDays": 1            
+    }
+  }' \
+  --mfa-configuration "ON" \                        <span class="cm"># Require MFA for all users</span>
+  --auto-verified-attributes "email" \              <span class="cm"># Email is auto-verified via link</span>
+  --schema '[
+    {"Name": "department", "AttributeDataType": "String", "Mutable": true, "Required": false},
+    {"Name": "data_tier", "AttributeDataType": "String", "Mutable": true, "Required": false}
+  ]' \
+  --account-recovery-setting '{
+    "RecoveryMechanisms": [{"Priority": 1, "Name": "verified_email"}]
+  }' \
+  --region eu-west-2
+
+<span class="cm"># Note the UserPoolId from the response — you'll need it everywhere</span></code></pre>
+
+<h3>Python (boto3): Create User Pool</h3>
+<pre><code><span class="cm"># scripts/setup_cognito.py</span>
+<span class="cm"># Purpose: Provision a Cognito User Pool with MFA, custom attributes,</span>
+<span class="cm"># and bank-grade password policy. Saves config to a JSON file for</span>
+<span class="cm"># later use by the FastAPI app and other setup scripts.</span>
+
+<span class="kw">import</span> boto3  <span class="cm"># AWS SDK for Python</span>
+<span class="kw">import</span> json   <span class="cm"># To save config to a file</span>
+
+REGION = <span class="str">'eu-west-2'</span>  <span class="cm"># AWS region — must match your other services</span>
+
+<span class="cm"># Create a Cognito Identity Provider client</span>
+<span class="cm"># 'cognito-idp' is the service name for User Pool operations</span>
+cognito = boto3.client(<span class="str">'cognito-idp'</span>, region_name=REGION)
+
+<span class="cm"># Create the User Pool — this is your authentication server.</span>
+<span class="cm"># After creation, it can issue JWTs, enforce MFA, and federate to IdPs.</span>
+response = cognito.create_user_pool(
+    PoolName=<span class="str">'athena-chatbot-users'</span>,  <span class="cm"># Display name in AWS Console</span>
+    Policies={
+        <span class="str">'PasswordPolicy'</span>: {         <span class="cm"># Bank-grade password requirements</span>
+            <span class="str">'MinimumLength'</span>: <span class="num">12</span>,       <span class="cm"># At least 12 characters</span>
+            <span class="str">'RequireUppercase'</span>: <span class="kw">True</span>,  <span class="cm"># Must include A-Z</span>
+            <span class="str">'RequireLowercase'</span>: <span class="kw">True</span>,  <span class="cm"># Must include a-z</span>
+            <span class="str">'RequireNumbers'</span>: <span class="kw">True</span>,    <span class="cm"># Must include 0-9</span>
+            <span class="str">'RequireSymbols'</span>: <span class="kw">True</span>,    <span class="cm"># Must include special chars</span>
+        }
+    },
+    MfaConfiguration=<span class="str">'ON'</span>,             <span class="cm"># MFA mandatory (not optional)</span>
+    AutoVerifiedAttributes=[<span class="str">'email'</span>],  <span class="cm"># Auto-verify email via link</span>
+    Schema=[                            <span class="cm"># Custom attributes for authorization</span>
+        {<span class="str">'Name'</span>: <span class="str">'department'</span>, <span class="str">'AttributeDataType'</span>: <span class="str">'String'</span>, <span class="str">'Mutable'</span>: <span class="kw">True</span>},   <span class="cm"># User's department (from IdP)</span>
+        {<span class="str">'Name'</span>: <span class="str">'data_tier'</span>, <span class="str">'AttributeDataType'</span>: <span class="str">'String'</span>, <span class="str">'Mutable'</span>: <span class="kw">True</span>},    <span class="cm"># Data classification tier</span>
+    ],
+    AccountRecoverySetting={            <span class="cm"># How users recover locked accounts</span>
+        <span class="str">'RecoveryMechanisms'</span>: [{<span class="str">'Priority'</span>: <span class="num">1</span>, <span class="str">'Name'</span>: <span class="str">'verified_email'</span>}]  <span class="cm"># Email only</span>
+    },
+)
+
+user_pool_id = response[<span class="str">'UserPool'</span>][<span class="str">'Id'</span>]
+print(f<span class="str">"✓ User Pool created: {user_pool_id}"</span>)
+
+<span class="cm"># Save for later use</span>
+config = {<span class="str">'user_pool_id'</span>: user_pool_id, <span class="str">'region'</span>: REGION}
+<span class="kw">with</span> open(<span class="str">'cognito_config.json'</span>, <span class="str">'w'</span>) <span class="kw">as</span> f:
+    json.dump(config, f, indent=<span class="num">2</span>)
+    print(<span class="str">"✓ Config saved to cognito_config.json"</span>)</code></pre>
+</section>
+
+<section id="cognito-client">
+<h2><span class="step-num">6</span>Create App Client &amp; Domain</h2>
+<p>The app client is how your FastAPI service authenticates with Cognito. The domain is needed for the hosted login UI and token endpoint.</p>
+
+<h3>AWS CLI</h3>
+<pre><code><span class="cm"># Create App Client (no client secret for public clients; with secret for server-side)</span>
+aws cognito-idp create-user-pool-client \
+  --user-pool-id &lt;YOUR_POOL_ID&gt; \
+  --client-name "chatbot-api" \
+  --generate-secret \
+  --explicit-auth-flows "ALLOW_REFRESH_TOKEN_AUTH" "ALLOW_USER_SRP_AUTH" \
+  --supported-identity-providers "COGNITO" \
+  --callback-urls '["http://localhost:8000/auth/callback"]' \
+  --logout-urls '["http://localhost:8000/auth/logout"]' \
+  --allowed-o-auth-flows "code" \
+  --allowed-o-auth-scopes "openid" "email" "profile" \
+  --allowed-o-auth-flows-user-pool-client \
+  --access-token-validity <span class="num">15</span> \
+  --id-token-validity <span class="num">15</span> \
+  --refresh-token-validity <span class="num">480</span> \
+  --token-validity-units '{
+    "AccessToken": "minutes",
+    "IdToken": "minutes",
+    "RefreshToken": "minutes"
+  }' \
+  --region eu-west-2
+
+<span class="cm"># Create a domain for the hosted UI</span>
+aws cognito-idp create-user-pool-domain \
+  --user-pool-id &lt;YOUR_POOL_ID&gt; \
+  --domain "natwest-chatbot-dev" \
+  --region eu-west-2</code></pre>
+
+<h3>Python (boto3)</h3>
+<pre><code><span class="cm"># Continue in scripts/setup_cognito.py</span>
+<span class="cm"># An App Client is how your application (FastAPI) talks to Cognito.</span>
+<span class="cm"># It defines: which auth flows are allowed, token lifetimes, OAuth scopes.</span>
+
+<span class="cm"># Create App Client — this gives your FastAPI app credentials to talk to Cognito</span>
+client_response = cognito.create_user_pool_client(
+    UserPoolId=user_pool_id,                    <span class="cm"># Attach to the pool we just created</span>
+    ClientName=<span class="str">'chatbot-api'</span>,                    <span class="cm"># Human-readable name</span>
+    GenerateSecret=<span class="kw">True</span>,                        <span class="cm"># Server-side app needs a secret (not public)</span>
+    ExplicitAuthFlows=[                          <span class="cm"># Which auth methods are allowed:</span>
+        <span class="str">'ALLOW_REFRESH_TOKEN_AUTH'</span>,               <span class="cm">#   - Refresh expired access tokens</span>
+        <span class="str">'ALLOW_USER_SRP_AUTH'</span>                    <span class="cm">#   - Secure Remote Password (no plaintext pw)</span>
+    ],
+    SupportedIdentityProviders=[<span class="str">'COGNITO'</span>],    <span class="cm"># Will add SAML IdP later</span>
+    CallbackURLs=[<span class="str">'http://localhost:8000/auth/callback'</span>],  <span class="cm"># OAuth redirect after login</span>
+    LogoutURLs=[<span class="str">'http://localhost:8000/auth/logout'</span>],      <span class="cm"># Redirect after logout</span>
+    AllowedOAuthFlows=[<span class="str">'code'</span>],                 <span class="cm"># Authorization Code flow (most secure)</span>
+    AllowedOAuthScopes=[<span class="str">'openid'</span>, <span class="str">'email'</span>, <span class="str">'profile'</span>],  <span class="cm"># What info the token contains</span>
+    AllowedOAuthFlowsUserPoolClient=<span class="kw">True</span>,      <span class="cm"># Enable OAuth for this client</span>
+    AccessTokenValidity=<span class="num">15</span>,                      <span class="cm"># Access token expires in 15 minutes</span>
+    IdTokenValidity=<span class="num">15</span>,                          <span class="cm"># ID token expires in 15 minutes</span>
+    RefreshTokenValidity=<span class="num">480</span>,                    <span class="cm"># Refresh token expires in 8 hours (480 min)</span>
+    TokenValidityUnits={                         <span class="cm"># Units for the validity values above</span>
+        <span class="str">'AccessToken'</span>: <span class="str">'minutes'</span>,
+        <span class="str">'IdToken'</span>: <span class="str">'minutes'</span>,
+        <span class="str">'RefreshToken'</span>: <span class="str">'minutes'</span>,
+    },
+)
+
+<span class="cm"># Extract the client credentials from the response</span>
+client_id = client_response[<span class="str">'UserPoolClient'</span>][<span class="str">'ClientId'</span>]          <span class="cm"># Public identifier</span>
+client_secret = client_response[<span class="str">'UserPoolClient'</span>][<span class="str">'ClientSecret'</span>]  <span class="cm"># Keep secret!</span>
+print(f<span class="str">"✓ App Client created: {client_id}"</span>)
+
+<span class="cm"># Create domain</span>
+cognito.create_user_pool_domain(
+    UserPoolId=user_pool_id,
+    Domain=<span class="str">'natwest-chatbot-dev'</span>
+)
+print(<span class="str">"✓ Domain created: natwest-chatbot-dev"</span>)
+
+<span class="cm"># Update config</span>
+config[<span class="str">'client_id'</span>] = client_id
+config[<span class="str">'client_secret'</span>] = client_secret
+config[<span class="str">'domain'</span>] = f<span class="str">'https://natwest-chatbot-dev.auth.{REGION}.amazoncognito.com'</span>
+<span class="kw">with</span> open(<span class="str">'cognito_config.json'</span>, <span class="str">'w'</span>) <span class="kw">as</span> f:
+    json.dump(config, f, indent=<span class="num">2</span>)</code></pre>
+</section>
+
+<section id="cognito-saml">
+<h2><span class="step-num">7</span>Add SAML Federation (Corporate IdP)</h2>
+<p>For production at a bank, Cognito federates to your corporate identity provider (Okta, Entra ID, Ping). Here's how to set it up.</p>
+
+<h3>AWS CLI: Add SAML IdP</h3>
+<pre><code><span class="cm"># You need the SAML metadata XML from your IdP (usually a URL)</span>
+<span class="cm"># For Okta: Admin → Applications → Your App → Sign On → Metadata URL</span>
+<span class="cm"># For Entra ID: Azure AD → Enterprise Apps → Your App → SAML → Metadata</span>
+
+<span class="cm"># Create the identity provider</span>
+aws cognito-idp create-identity-provider \
+  --user-pool-id &lt;YOUR_POOL_ID&gt; \
+  --provider-name "CorporateIdP" \
+  --provider-type "SAML" \
+  --provider-details '{
+    "MetadataURL": "https://your-idp.okta.com/app/xxxx/sso/saml/metadata"
+  }' \
+  --attribute-mapping '{
+    "email": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+    "custom:department": "department",
+    "custom:data_tier": "dataClassificationTier",
+    "given_name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+    "family_name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
+  }' \
+  --region eu-west-2
+
+<span class="cm"># Update app client to include the new IdP</span>
+aws cognito-idp update-user-pool-client \
+  --user-pool-id &lt;YOUR_POOL_ID&gt; \
+  --client-id &lt;YOUR_CLIENT_ID&gt; \
+  --supported-identity-providers "CorporateIdP" "COGNITO" \
+  --region eu-west-2</code></pre>
+
+<h3>Python (boto3)</h3>
+<pre><code><span class="cm"># Add SAML Identity Provider to Cognito</span>
+<span class="cm"># This tells Cognito: "trust this external IdP to authenticate users"</span>
+<span class="cm"># After this, users can log in via their corporate SSO (Okta, Entra, etc.)</span>
+cognito.create_identity_provider(
+    UserPoolId=user_pool_id,               <span class="cm"># Which User Pool to add the IdP to</span>
+    ProviderName=<span class="str">'CorporateIdP'</span>,            <span class="cm"># Name you'll reference in app client config</span>
+    ProviderType=<span class="str">'SAML'</span>,                    <span class="cm"># Protocol type (SAML 2.0)</span>
+    ProviderDetails={                       <span class="cm"># How Cognito finds the IdP's configuration:</span>
+        <span class="str">'MetadataURL'</span>: <span class="str">'https://your-idp.okta.com/app/xxxx/sso/saml/metadata'</span>  <span class="cm"># IdP metadata XML URL</span>
+    },
+    AttributeMapping={                      <span class="cm"># Map IdP SAML attributes → Cognito attributes:</span>
+        <span class="str">'email'</span>: <span class="str">'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'</span>,  <span class="cm"># Email</span>
+        <span class="str">'custom:department'</span>: <span class="str">'department'</span>,                        <span class="cm"># Department claim from IdP</span>
+        <span class="str">'custom:data_tier'</span>: <span class="str">'dataClassificationTier'</span>,             <span class="cm"># Data tier claim from IdP</span>
+    }
+)
+print(<span class="str">"✓ SAML IdP 'CorporateIdP' added"</span>)</code></pre>
+
+<div class="callout info">
+<div class="callout-label">What your IdP needs from you</div>
+Give your IdP administrator these values (from the Cognito User Pool):
+<ul>
+<li><strong>ACS URL:</strong> <code>https://natwest-chatbot-dev.auth.eu-west-2.amazoncognito.com/saml2/idpresponse</code></li>
+<li><strong>Entity ID:</strong> <code>urn:amazon:cognito:sp:&lt;YOUR_POOL_ID&gt;</code></li>
+<li><strong>Attribute statements:</strong> Map department, groups, data tier claims</li>
+</ul>
+</div>
+</section>
+
+<section id="cognito-python">
+<h2><span class="step-num">8</span>Create a Test User (for local dev)</h2>
+<pre><code><span class="cm"># AWS CLI: Create a user for testing (bypasses IdP for local dev)</span>
+aws cognito-idp admin-create-user \
+  --user-pool-id &lt;YOUR_POOL_ID&gt; \
+  --username "testuser@natwest.com" \
+  --user-attributes '[
+    {"Name": "email", "Value": "testuser@natwest.com"},
+    {"Name": "email_verified", "Value": "true"},
+    {"Name": "custom:department", "Value": "Finance"},
+    {"Name": "custom:data_tier", "Value": "Confidential"}
+  ]' \
+  --temporary-password "TempP@ss123!" \
+  --region eu-west-2
+
+<span class="cm"># Set permanent password (skip force-change flow for testing)</span>
+aws cognito-idp admin-set-user-password \
+  --user-pool-id &lt;YOUR_POOL_ID&gt; \
+  --username "testuser@natwest.com" \
+  --password "Pr0duction$ecure!" \
+  --permanent \
+  --region eu-west-2</code></pre>
+
+<h3>Python: Get a token (for testing your FastAPI app)</h3>
+<pre><code><span class="cm"># scripts/get_test_token.py</span>
+<span class="cm"># Purpose: Obtain a JWT access token from Cognito for local API testing.</span>
+<span class="cm"># This uses ADMIN_USER_PASSWORD_AUTH (direct username/password) which is</span>
+<span class="cm"># fine for dev/test but NOT how production works (production uses SAML SSO).</span>
+
+<span class="kw">import</span> boto3  <span class="cm"># AWS SDK</span>
+<span class="kw">import</span> json   <span class="cm"># Load saved config</span>
+
+<span class="cm"># Load the Cognito config we saved during setup (Pool ID, Client ID, etc.)</span>
+<span class="kw">with</span> open(<span class="str">'cognito_config.json'</span>) <span class="kw">as</span> f:
+    config = json.load(f)
+
+<span class="cm"># Create Cognito client using the region from our config</span>
+cognito = boto3.client(<span class="str">'cognito-idp'</span>, region_name=config[<span class="str">'region'</span>])
+
+<span class="cm"># Authenticate the test user and get JWT tokens back</span>
+<span class="cm"># admin_initiate_auth bypasses the hosted UI — only for testing!</span>
+response = cognito.admin_initiate_auth(
+    UserPoolId=config[<span class="str">'user_pool_id'</span>],       <span class="cm"># Which pool to authenticate against</span>
+    ClientId=config[<span class="str">'client_id'</span>],            <span class="cm"># Which app client to use</span>
+    AuthFlow=<span class="str">'ADMIN_USER_PASSWORD_AUTH'</span>,      <span class="cm"># Direct password auth (admin-only flow)</span>
+    AuthParameters={                          <span class="cm"># Credentials:</span>
+        <span class="str">'USERNAME'</span>: <span class="str">'testuser@natwest.com'</span>,   <span class="cm"># The test user we created earlier</span>
+        <span class="str">'PASSWORD'</span>: <span class="str">'Pr0duction$ecure!'</span>,     <span class="cm"># The password we set</span>
+    }
+)
+
+<span class="cm"># Extract tokens from the response</span>
+<span class="cm"># AccessToken: used for API authorization (what FastAPI validates)</span>
+<span class="cm"># IdToken: contains user identity claims (email, groups, etc.)</span>
+access_token = response[<span class="str">'AuthenticationResult'</span>][<span class="str">'AccessToken'</span>]  <span class="cm"># Use this for API calls</span>
+id_token = response[<span class="str">'AuthenticationResult'</span>][<span class="str">'IdToken'</span>]          <span class="cm"># Contains user info</span>
+
+<span class="cm"># Print the token so you can copy it into curl/httpx for testing</span>
+print(f<span class="str">"Access Token (first 50 chars): {access_token[:50]}..."</span>)
+print(f<span class="str">"\nUse this header for FastAPI testing:"</span>)
+print(f<span class="str">'  Authorization: Bearer {access_token}'</span>)</code></pre>
+</section>
+
+<!-- ========== LAB 3: CEDAR ========== -->
+<section id="cedar-intro">
+<div class="section-label">Lab 3 &mdash; Cedar Policies (AgentCore Policy)</div>
+<h2><span class="step-num">9</span>What Cedar Is and Where It Lives</h2>
+<p>Cedar is a policy language for authorization. In this architecture, Cedar policies are attached to the <strong>AgentCore Gateway</strong> via a <strong>Policy Engine</strong>. They control which users can call which tools.</p>
+
+<h3>The architecture of Policy</h3>
+<pre><code><span class="cm">How Cedar fits in:</span>
+
+<span class="hl">Your Code (policies/*.cedar)</span>   <span class="cm">← You write these</span>
+        │
+        ▼
+<span class="hl">AgentCore Policy Engine</span>        <span class="cm">← AWS hosts this; stores your Cedar policies</span>
+        │
+        ▼
+<span class="hl">AgentCore Gateway</span>              <span class="cm">← Engine is attached here; evaluates every tool call</span>
+        │
+        ▼
+<span class="hl">Your MCP Tools (Athena)</span>        <span class="cm">← Only reached if Cedar says ALLOW</span></code></pre>
+
+<h3>Where policies live</h3>
+<table>
+<tr><th>Location</th><th>Purpose</th><th>Who manages</th></tr>
+<tr><td><code>policies/*.cedar</code> (your repo)</td><td>Source of truth — version controlled, peer reviewed</td><td>Your team</td></tr>
+<tr><td>AgentCore Policy Engine (AWS)</td><td>Runtime evaluation — Gateway queries this</td><td>Deployed via CI/CD or boto3 script</td></tr>
+</table>
+
+<div class="callout">
+<div class="callout-label">Key principle</div>
+Cedar files in your repo are the <strong>source of truth</strong>. You deploy them to the Policy Engine via API. The Engine evaluates them at runtime. You never edit policies directly in AWS — always go through your repo + review process.
+</div>
+</section>
+
+<section id="cedar-write">
+<h2><span class="step-num">10</span>Writing Cedar Policies</h2>
+<p>Cedar policies follow a simple structure: <code>permit</code> or <code>forbid</code>, targeting a principal/action/resource combination.</p>
+
+<h3>File: policies/chatbot.cedar</h3>
+<pre><code><span class="cm">// ============================================================</span>
+<span class="cm">// Athena Chatbot — Cedar Authorization Policies</span>
+<span class="cm">// Author: Platform Security Team</span>
+<span class="cm">// Date: 2026-07-18</span>
+<span class="cm">// Review: Required before deployment (PR #xxx)</span>
+<span class="cm">// ============================================================</span>
+
+<span class="cm">// ---- DEFAULT DENY ----</span>
+<span class="cm">// Cedar is default-deny: if no permit matches, the request is denied.</span>
+<span class="cm">// We don't need to write an explicit "deny all" — it's built in.</span>
+
+<span class="cm">// ---- GLOBAL FORBIDS (cannot be overridden by any permit) ----</span>
+
+<span class="cm">// Nobody can ever query the HR PII database via this agent</span>
+<span class="kw">forbid</span> (
+  principal,
+  action == Athena::Action::<span class="str">"run_query"</span>,
+  resource == Athena::Database::<span class="str">"hr_pii"</span>
+);
+
+<span class="cm">// Nobody can ever query the compliance-restricted database</span>
+<span class="kw">forbid</span> (
+  principal,
+  action == Athena::Action::<span class="str">"run_query"</span>,
+  resource == Athena::Database::<span class="str">"compliance_restricted"</span>
+);
+
+<span class="cm">// ---- READ-ONLY DISCOVERY (all authenticated users) ----</span>
+
+<span class="cm">// Anyone can list tables and get schemas (read-only metadata)</span>
+<span class="kw">permit</span> (
+  principal,
+  action == Athena::Action::<span class="str">"list_tables"</span>,
+  resource
+);
+
+<span class="kw">permit</span> (
+  principal,
+  action == Athena::Action::<span class="str">"get_schema"</span>,
+  resource
+);
+
+<span class="kw">permit</span> (
+  principal,
+  action == Athena::Action::<span class="str">"estimate_cost"</span>,
+  resource
+);
+
+<span class="cm">// ---- PER-GROUP QUERY PERMISSIONS ----</span>
+
+<span class="cm">// Finance Analysts can query sales and finance databases</span>
+<span class="kw">permit</span> (
+  principal,
+  action == Athena::Action::<span class="str">"run_query"</span>,
+  resource == Athena::Database::<span class="str">"sales"</span>
+) <span class="kw">when</span> {
+  principal.groups.contains(<span class="str">"Finance-Analysts"</span>)
+};
+
+<span class="kw">permit</span> (
+  principal,
+  action == Athena::Action::<span class="str">"run_query"</span>,
+  resource == Athena::Database::<span class="str">"finance"</span>
+) <span class="kw">when</span> {
+  principal.groups.contains(<span class="str">"Finance-Analysts"</span>)
+};
+
+<span class="cm">// Marketing team can query marketing and campaigns databases</span>
+<span class="kw">permit</span> (
+  principal,
+  action == Athena::Action::<span class="str">"run_query"</span>,
+  resource == Athena::Database::<span class="str">"marketing"</span>
+) <span class="kw">when</span> {
+  principal.groups.contains(<span class="str">"Marketing-Team"</span>)
+};
+
+<span class="kw">permit</span> (
+  principal,
+  action == Athena::Action::<span class="str">"run_query"</span>,
+  resource == Athena::Database::<span class="str">"campaigns"</span>
+) <span class="kw">when</span> {
+  principal.groups.contains(<span class="str">"Marketing-Team"</span>)
+};
+
+<span class="cm">// Trading desk can query the trading database</span>
+<span class="kw">permit</span> (
+  principal,
+  action == Athena::Action::<span class="str">"run_query"</span>,
+  resource == Athena::Database::<span class="str">"trading"</span>
+) <span class="kw">when</span> {
+  principal.groups.contains(<span class="str">"Trading-Desk"</span>)
+};</code></pre>
+
+<div class="callout warn">
+<div class="callout-label">Security review required</div>
+Never deploy Cedar policies without human review. Natural-language authoring (AgentCore feature) can generate initial policies, but the generated Cedar must be inspected by a security engineer before it reaches production.
+</div>
+</section>
+
+<section id="cedar-deploy">
+<h2><span class="step-num">11</span>Deploy Cedar Policies via Python/CLI</h2>
+<p>Deploying Cedar policies involves: (1) creating a Policy Engine, (2) adding policies to it, and (3) attaching it to your Gateway.</p>
+
+<h3>Python (boto3): Full deployment script</h3>
+<pre><code><span class="cm"># scripts/setup_cedar.py — Deploy Cedar policies to AgentCore</span>
+<span class="cm"># Purpose: Read Cedar policy files from your repo and deploy them to AWS.</span>
+<span class="cm"># This creates: (1) a Policy Engine, (2) policies inside it, (3) attaches to Gateway.</span>
+<span class="cm"># After this runs, every tool call through the Gateway is authorized by Cedar.</span>
+
+<span class="kw">import</span> boto3              <span class="cm"># AWS SDK</span>
+<span class="kw">from</span> pathlib <span class="kw">import</span> Path  <span class="cm"># File path handling</span>
+
+REGION = <span class="str">'eu-west-2'</span>  <span class="cm"># Must match your Gateway's region</span>
+
+<span class="cm"># Create client for the AgentCore Control Plane API</span>
+<span class="cm"># This is the management API for Policy Engines, Gateways, etc.</span>
+client = boto3.client(<span class="str">'bedrock-agentcore-control'</span>, region_name=REGION)
+
+<span class="cm"># ─── STEP 1: Create a Policy Engine ─────────────────────────────────</span>
+<span class="cm"># A Policy Engine is a container that holds Cedar policies.</span>
+<span class="cm"># You attach it to a Gateway, and it evaluates every tool call.</span>
+print(<span class="str">"Creating Policy Engine..."</span>)
+engine_response = client.create_policy_engine(
+    name=<span class="str">'chatbot-authorization'</span>,                           <span class="cm"># Human-readable name</span>
+    description=<span class="str">'Cedar policies for the Athena chatbot agent'</span>  <span class="cm"># Description</span>
+)
+engine_id = engine_response[<span class="str">'policyEngineId'</span>]  <span class="cm"># Save this — needed for all subsequent calls</span>
+print(f<span class="str">"✓ Policy Engine created: {engine_id}"</span>)
+
+<span class="cm"># ─── STEP 2: Read Cedar policies from your local repository ─────────</span>
+<span class="cm"># The .cedar file in your repo is the source of truth.</span>
+<span class="cm"># It was peer-reviewed in a PR before being merged.</span>
+cedar_file = Path(<span class="str">'policies/chatbot.cedar'</span>)  <span class="cm"># Path to your Cedar file</span>
+cedar_content = cedar_file.read_text()         <span class="cm"># Read the entire file as a string</span>
+print(f<span class="str">"  Read {len(cedar_content)} characters from {cedar_file}"</span>)
+
+<span class="cm"># ─── STEP 3: Upload the Cedar policy to the Engine ──────────────────</span>
+<span class="cm"># This takes the Cedar text and stores it in the Policy Engine.</span>
+<span class="cm"># The Engine will evaluate this policy on every tool call through the Gateway.</span>
+policy_response = client.create_policy(
+    policyEngineId=engine_id,                     <span class="cm"># Which engine to add the policy to</span>
+    name=<span class="str">'chatbot-main-policy'</span>,                    <span class="cm"># Policy name (for identification)</span>
+    description=<span class="str">'Main authorization policy for Athena chatbot'</span>,  <span class="cm"># Description</span>
+    definition={                                   <span class="cm"># The actual policy content:</span>
+        <span class="str">'cedar'</span>: {                                  <span class="cm"># Tell AWS this is Cedar language</span>
+            <span class="str">'statement'</span>: cedar_content                <span class="cm"># The full Cedar text from your file</span>
+        }
+    }
+)
+policy_id = policy_response[<span class="str">'policyId'</span>]  <span class="cm"># Unique ID for this policy</span>
+print(f<span class="str">"✓ Policy created: {policy_id}"</span>)
+
+<span class="cm"># ─── STEP 4: Attach the Policy Engine to your Gateway ────────────────</span>
+<span class="cm"># This is the moment authorization goes live.</span>
+<span class="cm"># After this call, EVERY tool call through this Gateway will be evaluated</span>
+<span class="cm"># by the Cedar policies. If no permit matches → DENIED (default-deny).</span>
+GATEWAY_ID = <span class="str">'your-gateway-id'</span>  <span class="cm"># Replace with your actual Gateway ID</span>
+
+client.update_gateway(
+    gatewayId=GATEWAY_ID,        <span class="cm"># Which Gateway to protect</span>
+    policyEngineId=engine_id     <span class="cm"># Attach our Policy Engine to it</span>
+)
+print(f<span class="str">"✓ Policy Engine attached to Gateway: {GATEWAY_ID}"</span>)
+print(<span class="str">"\n✓ Cedar deployment complete!"</span>)
+print(<span class="str">"  Default-deny is now active."</span>)          <span class="cm"># No permit = no access</span>
+print(<span class="str">"  All tool calls must match an explicit permit."</span>)</code></pre>
+
+<h3>AWS CLI equivalent</h3>
+<pre><code><span class="cm"># Create Policy Engine</span>
+aws bedrock-agentcore-control create-policy-engine \
+  --name "chatbot-authorization" \
+  --description "Cedar policies for Athena chatbot" \
+  --region eu-west-2
+
+<span class="cm"># Create a policy (using the Cedar file content)</span>
+aws bedrock-agentcore-control create-policy \
+  --policy-engine-id &lt;ENGINE_ID&gt; \
+  --name "chatbot-main-policy" \
+  --definition '{
+    "cedar": {
+      "statement": "forbid(principal, action == Athena::Action::\"run_query\", resource == Athena::Database::\"hr_pii\"); permit(principal, action == Athena::Action::\"list_tables\", resource);"
+    }
+  }' \
+  --region eu-west-2
+
+<span class="cm"># Or generate policies from natural language (still requires human review!)</span>
+aws bedrock-agentcore-control start-policy-generation \
+  --policy-engine-id &lt;ENGINE_ID&gt; \
+  --description "Finance Analysts can query the sales database, nobody can query hr_pii" \
+  --region eu-west-2</code></pre>
+</section>
+
+<section id="cedar-where">
+<h2><span class="step-num">12</span>Policy Workflow: Where Everything Goes</h2>
+
+<h3>Development workflow</h3>
+<pre><code><span class="cm">1. Write Cedar in your repo:</span>          policies/chatbot.cedar
+<span class="cm">2. Validate locally:</span>                   cedar validate --policies ./policies/
+<span class="cm">3. Peer review:</span>                        Pull request → security engineer reviews
+<span class="cm">4. CI validates:</span>                       cedar validate runs in CI pipeline
+<span class="cm">5. Deploy to AWS:</span>                     python scripts/setup_cedar.py (or CI/CD)
+<span class="cm">6. Gateway evaluates at runtime:</span>      Every tool call hits the Policy Engine</code></pre>
+
+<h3>Local validation (install Cedar CLI)</h3>
+<pre><code><span class="cm"># Install Cedar CLI (Rust-based)</span>
+cargo install cedar-policy-cli
+
+<span class="cm"># Or download pre-built binary from GitHub releases</span>
+<span class="cm"># https://github.com/cedar-policy/cedar/releases</span>
+
+<span class="cm"># Validate your policies</span>
+cedar validate --policies ./policies/ --schema ./policies/schema.cedarschema
+
+<span class="cm"># Test a specific authorization request</span>
+cedar authorize \
+  --policies ./policies/ \
+  --entities ./policies/test-entities.json \
+  --principal 'User::"jsmith"' \
+  --action 'Athena::Action::"run_query"' \
+  --resource 'Athena::Database::"sales"'</code></pre>
+
+<div class="callout">
+<div class="callout-label">File organization</div>
+<pre><code>policies/
+├── chatbot.cedar              # Main policy file
+├── schema.cedarschema         # Entity/action type definitions
+├── test-entities.json         # Test data for local validation
+└── README.md                  # Policy documentation + change log</code></pre>
+</div>
+</section>
+
+<!-- ========== LAB 4: FASTAPI ========== -->
+<section id="fastapi-scaffold">
+<div class="section-label">Lab 4 &mdash; FastAPI Application</div>
+<h2><span class="step-num">13</span>Scaffold the FastAPI App</h2>
+<p>FastAPI is the thin API layer between the chat UI and AgentCore Runtime. It validates JWTs, rate-limits, and delegates to the agent. It does NOT implement orchestration logic.</p>
+
+<h3>File: api/config.py</h3>
+<pre><code><span class="cm"># api/config.py — Application settings from environment variables</span>
+<span class="cm"># Uses pydantic-settings to automatically load values from a .env file.</span>
+<span class="cm"># This keeps secrets out of code — never hardcode Pool IDs or keys.</span>
+
+<span class="kw">from</span> pydantic_settings <span class="kw">import</span> BaseSettings  <span class="cm"># Auto-loads from .env file</span>
+
+
+<span class="kw">class</span> Settings(BaseSettings):
+    <span class="cm"># ─── Cognito settings (needed for JWT validation) ───</span>
+    cognito_user_pool_id: str              <span class="cm"># e.g. "eu-west-2_ABcDeFgHi"</span>
+    cognito_region: str = <span class="str">"eu-west-2"</span>      <span class="cm"># Region where Cognito pool lives</span>
+    cognito_app_client_id: str             <span class="cm"># App client ID (audience check)</span>
+
+    <span class="cm"># ─── AgentCore settings (for production — calls to Runtime) ───</span>
+    agentcore_runtime_id: str = <span class="str">""</span>         <span class="cm"># Empty in dev (uses mock)</span>
+    agentcore_region: str = <span class="str">"eu-west-2"</span>    <span class="cm"># Region where Runtime is deployed</span>
+
+    <span class="cm"># ─── Application settings ───</span>
+    environment: str = <span class="str">"development"</span>        <span class="cm"># "development" or "production"</span>
+    rate_limit_per_minute: int = <span class="num">30</span>        <span class="cm"># Max requests per user per minute</span>
+
+    <span class="kw">class</span> Config:
+        env_file = <span class="str">".env"</span>  <span class="cm"># Load settings from .env file in project root</span>
+
+
+settings = Settings()</code></pre>
+
+<h3>File: api/auth.py</h3>
+<pre><code><span class="cm"># api/auth.py — JWT validation against Cognito</span>
+<span class="cm"># This module validates that incoming requests have a valid JWT token</span>
+<span class="cm"># issued by our Cognito User Pool. It checks:</span>
+<span class="cm">#   1. Token signature (was it signed by Cognito's private key?)</span>
+<span class="cm">#   2. Token expiry (has the 15-minute lifetime passed?)</span>
+<span class="cm">#   3. Audience (is this token meant for our app client?)</span>
+<span class="cm">#   4. Issuer (did it come from our specific User Pool?)</span>
+
+<span class="kw">import</span> httpx                             <span class="cm"># HTTP client to fetch Cognito's public keys</span>
+<span class="kw">from</span> jose <span class="kw">import</span> jwt, JWTError            <span class="cm"># JWT decoding and verification library</span>
+<span class="kw">from</span> fastapi <span class="kw">import</span> HTTPException, Security  <span class="cm"># Error responses + dependency injection</span>
+<span class="kw">from</span> fastapi.security <span class="kw">import</span> HTTPBearer, HTTPAuthorizationCredentials  <span class="cm"># Extract Bearer token</span>
+<span class="kw">from</span> functools <span class="kw">import</span> lru_cache            <span class="cm"># Cache the JWKS so we don't fetch every request</span>
+<span class="kw">from</span> api.config <span class="kw">import</span> settings            <span class="cm"># Our Cognito Pool ID, region, client ID</span>
+
+<span class="cm"># HTTPBearer extracts the token from "Authorization: Bearer &lt;token&gt;" header</span>
+security = HTTPBearer()
+
+
+@lru_cache(maxsize=<span class="num">1</span>)  <span class="cm"># Cache result — JWKS changes rarely (key rotation)</span>
+<span class="kw">def</span> get_jwks() -> dict:
+    <span class="str">"""Fetch Cognito's public keys (JWKS) for verifying token signatures.
+    
+    Cognito publishes its public keys at a well-known URL.
+    We fetch them once and cache — they only change on key rotation.
+    """</span>
+    url = (
+        f<span class="str">"https://cognito-idp.{settings.cognito_region}.amazonaws.com/"</span>
+        f<span class="str">"{settings.cognito_user_pool_id}/.well-known/jwks.json"</span>
+    )
+    response = httpx.get(url, timeout=<span class="num">10</span>)  <span class="cm"># Fetch public keys from Cognito</span>
+    response.raise_for_status()              <span class="cm"># Raise if HTTP error</span>
+    <span class="kw">return</span> response.json()                   <span class="cm"># Returns {keys: [{kid, n, e, ...}, ...]}</span>
+
+
+<span class="kw">def</span> find_key(token: str) -> dict:
+    <span class="str">"""Find the specific signing key that matches this token's 'kid' header.
+    
+    JWTs have a 'kid' (key ID) in their header telling you which key signed them.
+    We look it up in the JWKS to get the public key for verification.
+    """</span>
+    headers = jwt.get_unverified_headers(token)  <span class="cm"># Decode header without verifying (to get kid)</span>
+    kid = headers.get(<span class="str">"kid"</span>)
+    jwks = get_jwks()
+    <span class="kw">for</span> key <span class="kw">in</span> jwks[<span class="str">"keys"</span>]:
+        <span class="kw">if</span> key[<span class="str">"kid"</span>] == kid:
+            <span class="kw">return</span> key
+    <span class="kw">raise</span> HTTPException(status_code=<span class="num">401</span>, detail=<span class="str">"Token signing key not found"</span>)
+
+
+<span class="kw">def</span> validate_token(
+    credentials: HTTPAuthorizationCredentials = Security(security),
+) -> dict:
+    <span class="str">"""Validate JWT and return decoded claims.
+
+    Checks: signature, expiry, audience, issuer.
+    Returns: dict with sub, email, groups, department, data_tier.
+    """</span>
+    token = credentials.credentials
+    key = find_key(token)
+
+    issuer = (
+        f<span class="str">"https://cognito-idp.{settings.cognito_region}.amazonaws.com/"</span>
+        f<span class="str">"{settings.cognito_user_pool_id}"</span>
+    )
+
+    <span class="kw">try</span>:
+        payload = jwt.decode(
+            token,
+            key,
+            algorithms=[<span class="str">"RS256"</span>],
+            audience=settings.cognito_app_client_id,
+            issuer=issuer,
+            options={<span class="str">"verify_exp"</span>: <span class="kw">True</span>},
+        )
+    <span class="kw">except</span> JWTError <span class="kw">as</span> e:
+        <span class="kw">raise</span> HTTPException(status_code=<span class="num">401</span>, detail=f<span class="str">"Invalid token: {e}"</span>)
+
+    <span class="kw">return</span> {
+        <span class="str">"sub"</span>: payload.get(<span class="str">"sub"</span>),
+        <span class="str">"email"</span>: payload.get(<span class="str">"email"</span>),
+        <span class="str">"groups"</span>: payload.get(<span class="str">"cognito:groups"</span>, []),
+        <span class="str">"department"</span>: payload.get(<span class="str">"custom:department"</span>, <span class="str">""</span>),
+        <span class="str">"data_tier"</span>: payload.get(<span class="str">"custom:data_tier"</span>, <span class="str">""</span>),
+    }</code></pre>
+
+<h3>File: api/main.py</h3>
+<pre><code><span class="cm"># api/main.py — FastAPI application</span>
+<span class="cm"># This is the thin API layer between the chat UI and AgentCore Runtime.</span>
+<span class="cm"># It handles: JWT validation, rate limiting, and request forwarding.</span>
+<span class="cm"># It does NOT: generate SQL, call Athena, or implement AI logic.</span>
+
+<span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI, Depends, HTTPException  <span class="cm"># Web framework</span>
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel       <span class="cm"># Request/response validation</span>
+<span class="kw">from</span> api.auth <span class="kw">import</span> validate_token   <span class="cm"># Our JWT validation function</span>
+<span class="kw">from</span> api.config <span class="kw">import</span> settings       <span class="cm"># Environment settings (.env)</span>
+<span class="kw">import</span> boto3                          <span class="cm"># AWS SDK (for AgentCore calls in prod)</span>
+<span class="kw">import</span> time                           <span class="cm"># For rate limiting timestamps</span>
+<span class="kw">from</span> collections <span class="kw">import</span> defaultdict   <span class="cm"># Simple dict with default values</span>
+
+<span class="cm"># ─── APP CONFIGURATION ───────────────────────────────────────────────</span>
+<span class="cm"># In production (ENVIRONMENT=production), /docs and /redoc are disabled</span>
+<span class="cm"># to prevent API documentation from being publicly accessible.</span>
+docs_url = <span class="str">"/docs"</span> <span class="kw">if</span> settings.environment == <span class="str">"development"</span> <span class="kw">else</span> <span class="kw">None</span>
+redoc_url = <span class="str">"/redoc"</span> <span class="kw">if</span> settings.environment == <span class="str">"development"</span> <span class="kw">else</span> <span class="kw">None</span>
+
+app = FastAPI(
+    title=<span class="str">"Athena Chatbot API"</span>,
+    version=<span class="str">"1.0.0"</span>,
+    docs_url=docs_url,
+    redoc_url=redoc_url,
+)
+
+<span class="cm"># Simple in-memory rate limiter (use Redis in production)</span>
+rate_limit_store: dict = defaultdict(<span class="kw">list</span>)
+
+
+<span class="kw">def</span> check_rate_limit(user: dict = Depends(validate_token)):
+    <span class="str">"""Rate limit: max N requests per minute per user."""</span>
+    user_id = user[<span class="str">"sub"</span>]
+    now = time.time()
+    window = <span class="num">60</span>  <span class="cm"># 1 minute</span>
+
+    <span class="cm"># Clean old entries</span>
+    rate_limit_store[user_id] = [
+        t <span class="kw">for</span> t <span class="kw">in</span> rate_limit_store[user_id] <span class="kw">if</span> now - t &lt; window
+    ]
+
+    <span class="kw">if</span> len(rate_limit_store[user_id]) >= settings.rate_limit_per_minute:
+        <span class="kw">raise</span> HTTPException(status_code=<span class="num">429</span>, detail=<span class="str">"Rate limit exceeded"</span>)
+
+    rate_limit_store[user_id].append(now)
+    <span class="kw">return</span> user
+
+
+<span class="cm"># --- Request/Response models ---</span>
+
+<span class="kw">class</span> ChatRequest(BaseModel):
+    message: str
+    session_id: str | <span class="kw">None</span> = <span class="kw">None</span>
+
+
+<span class="kw">class</span> ChatResponse(BaseModel):
+    response: str
+    session_id: str
+    sql_generated: str | <span class="kw">None</span> = <span class="kw">None</span>
+
+
+<span class="cm"># --- Endpoints ---</span>
+
+@app.get(<span class="str">"/health"</span>)
+<span class="kw">def</span> health():
+    <span class="kw">return</span> {<span class="str">"status"</span>: <span class="str">"healthy"</span>}
+
+
+@app.post(<span class="str">"/chat"</span>, response_model=ChatResponse)
+<span class="kw">def</span> chat(
+    request: ChatRequest,
+    user: dict = Depends(check_rate_limit),
+):
+    <span class="str">"""Send a question to the Athena chatbot agent.
+
+    The agent runs on AgentCore Runtime. This endpoint:
+    1. Validates the JWT (done by dependency)
+    2. Rate-limits the user (done by dependency)
+    3. Forwards the request to AgentCore Runtime
+    4. Returns the agent's response
+    """</span>
+    <span class="cm"># In production, this calls AgentCore Runtime:</span>
+    <span class="cm"># agentcore = boto3.client('bedrock-agentcore', region_name=settings.agentcore_region)</span>
+    <span class="cm"># response = agentcore.invoke_agent(</span>
+    <span class="cm">#     runtimeId=settings.agentcore_runtime_id,</span>
+    <span class="cm">#     sessionId=request.session_id or str(uuid4()),</span>
+    <span class="cm">#     input={'message': request.message},</span>
+    <span class="cm">#     headers={'X-Amzn-Bedrock-AgentCore-Runtime-User-Id': user['sub']}</span>
+    <span class="cm"># )</span>
+
+    <span class="cm"># For local development, return a mock response:</span>
+    <span class="kw">return</span> ChatResponse(
+        response=f<span class="str">"[Mock] User {user['email']} asked: {request.message}"</span>,
+        session_id=request.session_id <span class="kw">or</span> <span class="str">"dev-session-001"</span>,
+        sql_generated=<span class="kw">None</span>,
+    )
+
+
+@app.get(<span class="str">"/me"</span>)
+<span class="kw">def</span> get_current_user(user: dict = Depends(validate_token)):
+    <span class="str">"""Return the authenticated user's claims (for debugging)."""</span>
+    <span class="kw">return</span> user</code></pre>
+</section>
+
+<section id="fastapi-auth">
+<h2><span class="step-num">14</span>Configure JWT Validation</h2>
+<p>Create a <code>.env</code> file for local development with your Cognito configuration:</p>
+
+<h3>File: .env</h3>
+<pre><code><span class="cm"># .env — Local development settings (DO NOT commit to git)</span>
+COGNITO_USER_POOL_ID=eu-west-2_XXXXXXXXX
+COGNITO_REGION=eu-west-2
+COGNITO_APP_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
+AGENTCORE_RUNTIME_ID=
+AGENTCORE_REGION=eu-west-2
+ENVIRONMENT=development
+RATE_LIMIT_PER_MINUTE=30</code></pre>
+
+<h3>File: .gitignore (add these)</h3>
+<pre><code><span class="cm"># Never commit secrets</span>
+.env
+cognito_config.json
+*.pem
+*.key</code></pre>
+
+<div class="callout info">
+<div class="callout-label">How JWT validation works</div>
+<ol>
+<li>User authenticates via Cognito (hosted UI or SAML redirect)</li>
+<li>Cognito returns a signed JWT (access token)</li>
+<li>Frontend sends <code>Authorization: Bearer &lt;token&gt;</code> with each request</li>
+<li>FastAPI fetches Cognito's public keys (JWKS) and verifies the signature</li>
+<li>Checks: signature valid, not expired, correct audience (client ID), correct issuer (pool ID)</li>
+<li>Extracts claims: user ID, email, groups, department, data tier</li>
+</ol>
+</div>
+</section>
+
+<section id="fastapi-run">
+<h2><span class="step-num">15</span>Run FastAPI Locally</h2>
+
+<h3>Start the development server</h3>
+<pre><code><span class="cm"># From your project root:</span>
+uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+
+<span class="cm"># You should see:</span>
+<span class="cm"># INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)</span>
+<span class="cm"># INFO:     Started reloader process</span></code></pre>
+
+<h3>Verify it's running</h3>
+<pre><code><span class="cm"># Health check (no auth needed)</span>
+curl http://localhost:8000/health
+<span class="cm"># {"status": "healthy"}</span>
+
+<span class="cm"># Try without token (should get 403)</span>
+curl http://localhost:8000/me
+<span class="cm"># {"detail": "Not authenticated"}</span>
+
+<span class="cm"># Open docs (only in development)</span>
+<span class="cm"># Browse to: http://localhost:8000/docs</span></code></pre>
+
+<h3>Test with a real Cognito token</h3>
+<pre><code><span class="cm"># First, get a token using the script from Lab 2:</span>
+python scripts/get_test_token.py
+
+<span class="cm"># Then use it:</span>
+curl -H "Authorization: Bearer &lt;YOUR_ACCESS_TOKEN&gt;" \
+  http://localhost:8000/me
+
+<span class="cm"># Should return your user claims:</span>
+<span class="cm"># {"sub": "xxx", "email": "testuser@natwest.com",</span>
+<span class="cm">#  "groups": ["Finance-Analysts"], "department": "Finance",</span>
+<span class="cm">#  "data_tier": "Confidential"}</span></code></pre>
+
+<h3>Test the chat endpoint</h3>
+<pre><code><span class="cm"># Send a chat message</span>
+curl -X POST http://localhost:8000/chat \
+  -H "Authorization: Bearer &lt;YOUR_ACCESS_TOKEN&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "How many orders were placed last month?"}'
+
+<span class="cm"># Response (mock in dev):</span>
+<span class="cm"># {"response": "[Mock] User testuser@natwest.com asked: How many orders...",</span>
+<span class="cm">#  "session_id": "dev-session-001", "sql_generated": null}</span></code></pre>
+
+<h3>Python test script (alternative to curl)</h3>
+<pre><code><span class="cm"># scripts/test_api.py — Test the FastAPI app programmatically</span>
+<span class="kw">import</span> httpx
+<span class="kw">import</span> json
+
+<span class="cm"># Load token from the get_test_token script</span>
+<span class="cm"># (In practice, run get_test_token.py first and copy the token)</span>
+TOKEN = <span class="str">"your-access-token-here"</span>
+
+BASE_URL = <span class="str">"http://localhost:8000"</span>
+headers = {<span class="str">"Authorization"</span>: f<span class="str">"Bearer {TOKEN}"</span>}
+
+<span class="cm"># Test health</span>
+r = httpx.get(f<span class="str">"{BASE_URL}/health"</span>)
+print(f<span class="str">"Health: {r.json()}"</span>)
+
+<span class="cm"># Test auth</span>
+r = httpx.get(f<span class="str">"{BASE_URL}/me"</span>, headers=headers)
+print(f<span class="str">"User: {json.dumps(r.json(), indent=2)}"</span>)
+
+<span class="cm"># Test chat</span>
+r = httpx.post(
+    f<span class="str">"{BASE_URL}/chat"</span>,
+    headers=headers,
+    json={<span class="str">"message"</span>: <span class="str">"Show me total orders by region for Q1 2025"</span>}
+)
+print(f<span class="str">"Chat: {json.dumps(r.json(), indent=2)}"</span>)
+
+<span class="cm"># Test rate limiting (send 31 requests quickly)</span>
+print(<span class="str">"\nTesting rate limit..."</span>)
+<span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">32</span>):
+    r = httpx.post(
+        f<span class="str">"{BASE_URL}/chat"</span>,
+        headers=headers,
+        json={<span class="str">"message"</span>: f<span class="str">"Query {i}"</span>}
+    )
+    <span class="kw">if</span> r.status_code == <span class="num">429</span>:
+        print(f<span class="str">"  Rate limited at request {i+1}: {r.json()}"</span>)
+        <span class="kw">break</span></code></pre>
+</section>
+
+<section id="fastapi-test">
+<h2><span class="step-num">16</span>End-to-End Local Test</h2>
+<p>Here's the complete local development flow from start to finish:</p>
+
+<pre><code><span class="cm"># Terminal 1: Start FastAPI</span>
+uvicorn api.main:app --reload --port 8000
+
+<span class="cm"># Terminal 2: Run the full test sequence</span>
+
+<span class="cm"># 1. Verify Athena tables exist</span>
+python scripts/setup_athena.py
+
+<span class="cm"># 2. Get a Cognito token</span>
+python scripts/get_test_token.py
+
+<span class="cm"># 3. Test the API</span>
+python scripts/test_api.py</code></pre>
+
+<h3>What happens in production (vs. local dev)</h3>
+<table>
+<tr><th>Step</th><th>Local Dev</th><th>Production</th></tr>
+<tr><td>Authentication</td><td><code>admin_initiate_auth</code> with username/password</td><td>SAML redirect to corporate IdP → Cognito → JWT</td></tr>
+<tr><td>Chat endpoint</td><td>Returns mock response</td><td>Invokes AgentCore Runtime → LangGraph agent runs</td></tr>
+<tr><td>Tool calls</td><td>None (mocked)</td><td>Agent → Gateway → Policy (Cedar) → Identity (OBO) → MCP server → Athena</td></tr>
+<tr><td>Authorization</td><td>JWT validated only</td><td>JWT + Cedar Policy + Lake Formation (three layers)</td></tr>
+<tr><td>Rate limiting</td><td>In-memory dict</td><td>Redis or API Gateway throttling</td></tr>
+<tr><td>Docs endpoint</td><td>Available at /docs</td><td>Disabled (ENVIRONMENT=production)</td></tr>
+</table>
+
+<div class="callout">
+<div class="callout-label">Next steps after local development</div>
+<ol>
+<li><strong>Deploy FastAPI to ECS Fargate</strong> behind a private ALB (no public access)</li>
+<li><strong>Provision AgentCore Runtime</strong> and deploy the LangGraph agent</li>
+<li><strong>Wire the /chat endpoint</strong> to invoke AgentCore Runtime instead of returning mock responses</li>
+<li><strong>Register MCP tools on Gateway</strong> and attach your Cedar policies</li>
+<li><strong>Enable Lake Formation</strong> and configure OBO token exchange</li>
+</ol>
+Each of these steps is a task in <code>tasks.md</code> — Kiro can implement them one by one via <code>#spec:athena-chatbot implement task N</code>.
+</div>
+</section>
+
+<!-- ========== SUMMARY ========== -->
+<section id="summary">
+<div class="section-label">Summary</div>
+<h2>What You've Built</h2>
+
+<table>
+<tr><th>Lab</th><th>What you set up</th><th>Files created</th></tr>
+<tr><td>Lab 1</td><td>S3 bucket with CSV data, Glue database, Athena tables</td><td><code>scripts/setup_athena.py</code></td></tr>
+<tr><td>Lab 2</td><td>Cognito User Pool with MFA, app client, SAML federation, test user</td><td><code>scripts/setup_cognito.py</code></td></tr>
+<tr><td>Lab 3</td><td>Cedar policies (forbids + per-group permits), deployed to Policy Engine</td><td><code>policies/chatbot.cedar</code>, <code>scripts/setup_cedar.py</code></td></tr>
+<tr><td>Lab 4</td><td>FastAPI app with JWT validation, rate limiting, chat endpoint</td><td><code>api/main.py</code>, <code>api/auth.py</code>, <code>api/config.py</code></td></tr>
+</table>
+
+<h3>Complete setup script (run all labs)</h3>
+<pre><code><span class="cm"># Run everything in sequence</span>
+pip install -r requirements.txt
+
+<span class="cm"># Lab 1: Athena</span>
+python scripts/upload_csv.py
+python scripts/setup_athena.py
+
+<span class="cm"># Lab 2: Cognito</span>
+python scripts/setup_cognito.py
+
+<span class="cm"># Lab 3: Cedar (requires Gateway to be provisioned first)</span>
+<span class="cm"># python scripts/setup_cedar.py</span>
+
+<span class="cm"># Lab 4: FastAPI</span>
+uvicorn api.main:app --reload --port 8000</code></pre>
+
+<h3>AWS CLI quick-reference</h3>
+<table>
+<tr><th>Service</th><th>Key commands</th></tr>
+<tr><td>S3</td><td><code>aws s3 mb</code>, <code>aws s3 cp</code>, <code>aws s3 ls</code></td></tr>
+<tr><td>Glue</td><td><code>aws glue create-database</code>, <code>aws glue get-tables</code></td></tr>
+<tr><td>Athena</td><td><code>aws athena start-query-execution</code>, <code>aws athena get-query-results</code></td></tr>
+<tr><td>Cognito</td><td><code>aws cognito-idp create-user-pool</code>, <code>aws cognito-idp create-user-pool-client</code></td></tr>
+<tr><td>AgentCore</td><td><code>aws bedrock-agentcore-control create-policy-engine</code>, <code>aws bedrock-agentcore-control create-policy</code></td></tr>
+</table>
+
+<div class="callout">
+<div class="callout-label">How this connects to the main course</div>
+This hands-on guide covers the <strong>foundational AWS setup</strong> (Waves 1-2 in <code>tasks.md</code>). The main course (<code>kiro-course.html</code>) covers the full architecture, the agent build (Wave 3+), security design, and governance. Use both together: this guide to get services running, the main course to understand why they're configured the way they are.
+</div>
+</section>
+
+<footer>
+<p>Hands-On Lab Guide &middot; July 2026 &middot; Part of the Athena Chatbot project.</p>
+<p>For architecture decisions and security rationale, see the <a href="kiro-course.html">Kiro Field Manual</a>.</p>
+</footer>
+
+</main>
+
+<a href="#" class="back-top" id="backTop">&uarr; TOP</a>
+<script>
+const backTop = document.getElementById('backTop');
+window.addEventListener('scroll', () => { backTop.classList.toggle('show', window.scrollY > 400); });
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav.sidebar a');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => { if (entry.isIntersecting) { navLinks.forEach(link => { link.classList.toggle('active', link.getAttribute('href') === '#' + entry.target.id); }); } });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => observer.observe(s));
+navLinks.forEach(link => { link.addEventListener('click', () => { document.querySelector('nav.sidebar').classList.remove('open'); }); });
+</script>
+</body>
+</html>

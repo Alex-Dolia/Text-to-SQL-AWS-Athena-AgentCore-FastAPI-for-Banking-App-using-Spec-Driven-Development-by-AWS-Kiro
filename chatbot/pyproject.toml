@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "chatbot-security-architecture"
+version = "0.1.0"
+description = "Production chatbot security architecture for Tier-1 bank Athena queries"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn==0.34.0",
+    "pydantic==2.10.4",
+    "python-jose[cryptography]==3.3.0",
+    "langgraph==0.2.60",
+    "boto3==1.35.86",
+    "opensearch-py==2.8.0",
+    "httpx==0.28.1",
+    "circuitbreaker==2.0.0",
+    "sqlglot==26.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.24.0",
+    "hypothesis==6.119.3",
+    "ruff==0.8.4",
+    "mypy==1.13.0",
+    "moto[all]==5.0.23",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["api", "agent", "mcp_server", "policies", "scripts", "tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "S", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

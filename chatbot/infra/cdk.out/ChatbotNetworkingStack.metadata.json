@@ -1,0 +1,453 @@
+{
+  "/ChatbotNetworkingStack": [
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/VpcId": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "VpcId"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:402:5)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/SgAlbId": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SgAlbId"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:408:5)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/SgFastapiId": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SgFastapiId"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:414:5)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/SgVpceId": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SgVpceId"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:420:5)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib...",
+        "(no user code in 10 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/ChatbotVpc/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ChatbotVpcD40225CB"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Vpc2 in aws-cdk-lib...",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:30:16)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/SgAlb/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SgAlbEA3AC417"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new SecurityGroup2 in aws-cdk-lib...",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:51:18)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/SgAlb/to ChatbotNetworkingStackSgFastapi9CC24947:8000": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SgAlbtoChatbotNetworkingStackSgFastapi9CC2494780008EE53F69"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.<anonymous> in aws-cdk-lib...",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:96:16)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/SgFastapi/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SgFastapi4E58613D"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new SecurityGroup2 in aws-cdk-lib...",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:64:22)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/SgFastapi/from ChatbotNetworkingStackSgAlb90F02668:8000": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SgFastapifromChatbotNetworkingStackSgAlb90F02668800060935D67"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.<anonymous> in aws-cdk-lib...",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:70:20)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/SgVpce/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SgVpce0888899C"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new SecurityGroup2 in aws-cdk-lib...",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:83:19)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/SgVpce/from ChatbotNetworkingStackSgFastapi9CC24947:443": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SgVpcefromChatbotNetworkingStackSgFastapi9CC24947443F2854388"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.<anonymous> in aws-cdk-lib...",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:89:17)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/VpceBedrockRuntime/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "VpceBedrockRuntime280E15CF"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new InterfaceVpcEndpoint2 in aws-cdk-lib...",
+        "createInterfaceEndpoint (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:117:24)",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:162:29)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/VpceAthena/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "VpceAthena49939E26"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new InterfaceVpcEndpoint2 in aws-cdk-lib...",
+        "createInterfaceEndpoint (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:117:24)",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:179:28)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/VpceGlue/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "VpceGlue796DD379"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new InterfaceVpcEndpoint2 in aws-cdk-lib...",
+        "createInterfaceEndpoint (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:117:24)",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:198:26)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/VpceSecretsManager/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "VpceSecretsManager937C6ECA"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new InterfaceVpcEndpoint2 in aws-cdk-lib...",
+        "createInterfaceEndpoint (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:117:24)",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:252:36)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/VpceKms/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "VpceKms202FC2BE"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new InterfaceVpcEndpoint2 in aws-cdk-lib...",
+        "createInterfaceEndpoint (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:117:24)",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:270:25)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/VpceCloudWatchLogs/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "VpceCloudWatchLogsF8075989"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new InterfaceVpcEndpoint2 in aws-cdk-lib...",
+        "createInterfaceEndpoint (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:117:24)",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:288:36)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/VpceCloudWatchMonitoring/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "VpceCloudWatchMonitoring20CFF624"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new InterfaceVpcEndpoint2 in aws-cdk-lib...",
+        "createInterfaceEndpoint (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:117:24)",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:307:42)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/VpceOpenSearchServerless/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "VpceOpenSearchServerless397E48AD"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new InterfaceVpcEndpoint2 in aws-cdk-lib...",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:324:32)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/VpceCognito/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "VpceCognitoE90138D0"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new InterfaceVpcEndpoint2 in aws-cdk-lib...",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:360:29)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...App.synth in aws-cdk-lib...",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:24:5)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet1/Subnet": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ChatbotVpcPrivateSubnet1Subnet88661181"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\node_modules\\aws-cdk-lib\\aws-ec2\\lib\\vpc.js:1:272 in aws-cdk-lib...",
+        "Array.forEach (:)",
+        "...aws-cdk-lib..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet1/RouteTable": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ChatbotVpcPrivateSubnet1RouteTable8B6124CE"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\node_modules\\aws-cdk-lib\\aws-ec2\\lib\\vpc.js:1:272 in aws-cdk-lib...",
+        "Array.forEach (:)",
+        "...aws-cdk-lib..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet1/RouteTableAssociation": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ChatbotVpcPrivateSubnet1RouteTableAssociationEFF98B88"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\node_modules\\aws-cdk-lib\\aws-ec2\\lib\\vpc.js:1:272 in aws-cdk-lib...",
+        "Array.forEach (:)",
+        "...aws-cdk-lib..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet2/Subnet": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ChatbotVpcPrivateSubnet2Subnet3985DB03"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\node_modules\\aws-cdk-lib\\aws-ec2\\lib\\vpc.js:1:272 in aws-cdk-lib...",
+        "Array.forEach (:)",
+        "...aws-cdk-lib..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet2/RouteTable": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ChatbotVpcPrivateSubnet2RouteTable05FF211C"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\node_modules\\aws-cdk-lib\\aws-ec2\\lib\\vpc.js:1:272 in aws-cdk-lib...",
+        "Array.forEach (:)",
+        "...aws-cdk-lib..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/ChatbotVpc/PrivateSubnet2/RouteTableAssociation": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ChatbotVpcPrivateSubnet2RouteTableAssociationB057B4DE"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\node_modules\\aws-cdk-lib\\aws-ec2\\lib\\vpc.js:1:272 in aws-cdk-lib...",
+        "Array.forEach (:)",
+        "...aws-cdk-lib..."
+      ]
+    }
+  ],
+  "/ChatbotNetworkingStack/ChatbotVpc/VpceS3/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ChatbotVpcVpceS3245B9187"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addGatewayEndpoint in aws-cdk-lib...",
+        "new NetworkingStack (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\lib\\networking-stack.ts:218:40)",
+        "<anonymous> (D:\\Documents\\AWS\\Chat_Athena\\chatbot\\infra\\bin\\app.ts:13:25)",
+        "...node internals, ts-node, ts-node..."
+      ]
+    }
+  ]
+}
