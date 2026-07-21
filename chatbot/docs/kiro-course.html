@@ -237,7 +237,7 @@ footer a{color:var(--amber-500)}
     |               |            |            |
  <span class="g">[approve]</span>      <span class="g">[approve]</span>   <span class="g">[approve]</span>    <span class="g">[verify]</span></div>
 <p>No code is written until all three spec files are approved. <a href="https://kiro.dev/docs/specs/">Source: kiro.dev/docs/specs</a></p>
-<div class="callout tip"><div class="callout-label">Why SDD for NatWest?</div>A bank chatbot touching financial data needs formal requirements, a reviewed security architecture, and audit-ready decisions &mdash; before a line of code exists. Spec mode enforces this.</div>
+<div class="callout tip"><div class="callout-label">Why SDD for the financial institution?</div>A bank chatbot touching financial data needs formal requirements, a reviewed security architecture, and audit-ready decisions &mdash; before a line of code exists. Spec mode enforces this.</div>
 </section>
 
 <section id="install">
@@ -308,7 +308,7 @@ footer a{color:var(--amber-500)}
 <tr><td><strong>5</strong></td><td>Review tasks &rarr; <strong>Approve</strong></td><td>Spec complete &mdash; ready to implement</td></tr>
 </table>
 <h3>The prompt to paste into the spec input</h3>
-<div class="prompt-box"><div class="prompt-label">Paste this into "Enter your idea..." and press Enter</div><span class="prompt-text">Design a production chatbot for NatWest business users to query several hundred Athena tables in natural language. Project directory: chatbot/
+<div class="prompt-box"><div class="prompt-label">Paste this into "Enter your idea..." and press Enter</div><span class="prompt-text">Design a production chatbot for the financial institution business users to query several hundred Athena tables in natural language. Project directory: chatbot/
 
 - Cognito federated to corporate IdP (SAML/OIDC, MFA, 15-min JWTs)
 - FastAPI (chatbot/api/) — thin auth layer, delegates to agent
@@ -722,7 +722,7 @@ All traced: Observability &rarr; Immutable audit (S3 Object Lock, 7yr)</code></p
 <span class="tier-badge adv">Advanced</span>
 <h2>Exact Kiro Prompts</h2>
 <p>Vague prompts produce vague designs. This is the same Design-First prompt introduced in <a href="#workflows">Generate the Three Spec Files</a> — reproduced here with annotations on why each line matters, so you understand what you'd be removing if you trim it down.</p>
-<div class="prompt-box"><div class="prompt-label">Annotated — why each line is here</div><span class="prompt-text">Design a production chatbot for NatWest business users to query several hundred Athena tables in natural language. Project directory: chatbot/
+<div class="prompt-box"><div class="prompt-label">Annotated — why each line is here</div><span class="prompt-text">Design a production chatbot for the financial institution business users to query several hundred Athena tables in natural language. Project directory: chatbot/
 
 - Cognito federated to corporate IdP (SAML/OIDC, MFA, 15-min JWTs)
 - FastAPI (chatbot/api/) — thin auth layer, delegates to agent

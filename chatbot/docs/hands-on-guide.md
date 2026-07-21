@@ -85,17 +85,17 @@ order_id,customer_id,order_date,amount,region,product_category
 
 ```bash
 # Create the data lake bucket (use your own unique name)
-aws s3 mb s3://natwest-datalake-dev-eu-west-2 --region eu-west-2
+aws s3 mb s3://fi-datalake-dev-eu-west-2 --region eu-west-2
 
 # Upload CSV files (organized by database/table/)
-aws s3 cp data/orders.csv s3://natwest-datalake-dev-eu-west-2/trading/orders/orders.csv
+aws s3 cp data/orders.csv s3://fi-datalake-dev-eu-west-2/trading/orders/orders.csv
 
 # Upload multiple CSVs at once
-aws s3 sync data/ s3://natwest-datalake-dev-eu-west-2/trading/orders/ \
+aws s3 sync data/ s3://fi-datalake-dev-eu-west-2/trading/orders/ \
   --exclude "*" --include "*.csv"
 
 # Verify upload
-aws s3 ls s3://natwest-datalake-dev-eu-west-2/trading/orders/
+aws s3 ls s3://fi-datalake-dev-eu-west-2/trading/orders/
 ```
 
 #### Python (boto3): Upload programmatically
@@ -112,7 +112,7 @@ from pathlib import Path  # Modern file path handling (cross-platform)
 # using credentials from 'aws configure' or environment variables
 s3 = boto3.client('s3', region_name='eu-west-2')
 
-BUCKET = 'natwest-datalake-dev-eu-west-2'  # Target S3 bucket name (must be globally unique)
+BUCKET = 'fi-datalake-dev-eu-west-2'  # Target S3 bucket name (must be globally unique)
 DATA_DIR = Path('data')                     # Local folder containing your CSV files
 
 # Create the S3 bucket if it doesn't already exist
@@ -197,7 +197,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS trading.orders (
 ROW FORMAT DELIMITED
   FIELDS TERMINATED BY ','
   LINES TERMINATED BY '\n'
-LOCATION 's3://natwest-datalake-dev-eu-west-2/trading/orders/'
+LOCATION 's3://fi-datalake-dev-eu-west-2/trading/orders/'
 TBLPROPERTIES (
   'skip.header.line.count' = '1',
   'classification' = 'csv'
@@ -226,7 +226,7 @@ WITH SERDEPROPERTIES (
   'quoteChar'     = '"',
   'escapeChar'    = '\\'
 )
-LOCATION 's3://natwest-datalake-dev-eu-west-2/trading/clients/'
+LOCATION 's3://fi-datalake-dev-eu-west-2/trading/clients/'
 TBLPROPERTIES ('skip.header.line.count' = '1');
 ```
 
@@ -239,7 +239,7 @@ aws athena start-query-execution \
     order_id STRING, customer_id STRING, order_date DATE,
     amount DOUBLE, region STRING, product_category STRING
   ) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-  LOCATION 's3://natwest-datalake-dev-eu-west-2/trading/orders/'
+  LOCATION 's3://fi-datalake-dev-eu-west-2/trading/orders/'
   TBLPROPERTIES ('skip.header.line.count'='1')" \
   --work-group "primary" \
   --region eu-west-2
@@ -253,7 +253,7 @@ aws athena get-query-execution \
 aws athena start-query-execution \
   --query-string "SELECT * FROM trading.orders LIMIT 5" \
   --work-group "primary" \
-  --result-configuration "OutputLocation=s3://natwest-datalake-dev-eu-west-2/query-results/" \
+  --result-configuration "OutputLocation=s3://fi-datalake-dev-eu-west-2/query-results/" \
   --region eu-west-2
 ```
 
@@ -284,7 +284,7 @@ import time
 # ─── CONFIGURATION ───────────────────────────────────────────────────
 # Change these values to match your AWS environment
 REGION = 'eu-west-2'                          # AWS region where your S3 bucket lives
-BUCKET = 'natwest-datalake-dev-eu-west-2'      # S3 bucket containing your CSV files
+BUCKET = 'fi-datalake-dev-eu-west-2'      # S3 bucket containing your CSV files
 DATABASE = 'trading'                           # Glue database name (logical grouping)
 TABLE = 'orders'                               # Table name that will appear in Athena
 WORKGROUP = 'primary'                          # Athena workgroup (controls cost/access)
@@ -573,7 +573,7 @@ aws cognito-idp create-user-pool-client \
 # Create a domain for the hosted UI
 aws cognito-idp create-user-pool-domain \
   --user-pool-id <YOUR_POOL_ID> \
-  --domain "natwest-chatbot-dev" \
+  --domain "fi-chatbot-dev" \
   --region eu-west-2
 ```
 
@@ -617,14 +617,14 @@ print(f"✓ App Client created: {client_id}")
 # Create domain
 cognito.create_user_pool_domain(
     UserPoolId=user_pool_id,
-    Domain='natwest-chatbot-dev'
+    Domain='fi-chatbot-dev'
 )
-print("✓ Domain created: natwest-chatbot-dev")
+print("✓ Domain created: fi-chatbot-dev")
 
 # Update config
 config['client_id'] = client_id
 config['client_secret'] = client_secret
-config['domain'] = f'https://natwest-chatbot-dev.auth.{REGION}.amazoncognito.com'
+config['domain'] = f'https://fi-chatbot-dev.auth.{REGION}.amazoncognito.com'
 with open('cognito_config.json', 'w') as f:
     json.dump(config, f, indent=2)
 ```
@@ -689,7 +689,7 @@ print("✓ SAML IdP 'CorporateIdP' added")
 
 > **What your IdP needs from you:**
 > Give your IdP administrator these values (from the Cognito User Pool):
-> - **ACS URL:** `https://natwest-chatbot-dev.auth.eu-west-2.amazoncognito.com/saml2/idpresponse`
+> - **ACS URL:** `https://fi-chatbot-dev.auth.eu-west-2.amazoncognito.com/saml2/idpresponse`
 > - **Entity ID:** `urn:amazon:cognito:sp:<YOUR_POOL_ID>`
 > - **Attribute statements:** Map department, groups, data tier claims
 
@@ -699,9 +699,9 @@ print("✓ SAML IdP 'CorporateIdP' added")
 # AWS CLI: Create a user for testing (bypasses IdP for local dev)
 aws cognito-idp admin-create-user \
   --user-pool-id <YOUR_POOL_ID> \
-  --username "testuser@natwest.com" \
+  --username "testuser@example.com" \
   --user-attributes '[
-    {"Name": "email", "Value": "testuser@natwest.com"},
+    {"Name": "email", "Value": "testuser@example.com"},
     {"Name": "email_verified", "Value": "true"},
     {"Name": "custom:department", "Value": "Finance"},
     {"Name": "custom:data_tier", "Value": "Confidential"}
@@ -712,7 +712,7 @@ aws cognito-idp admin-create-user \
 # Set permanent password (skip force-change flow for testing)
 aws cognito-idp admin-set-user-password \
   --user-pool-id <YOUR_POOL_ID> \
-  --username "testuser@natwest.com" \
+  --username "testuser@example.com" \
   --password "Pr0duction$ecure!" \
   --permanent \
   --region eu-west-2
@@ -743,7 +743,7 @@ response = cognito.admin_initiate_auth(
     ClientId=config['client_id'],            # Which app client to use
     AuthFlow='ADMIN_USER_PASSWORD_AUTH',      # Direct password auth (admin-only flow)
     AuthParameters={                          # Credentials:
-        'USERNAME': 'testuser@natwest.com',   # The test user we created earlier
+        'USERNAME': 'testuser@example.com',   # The test user we created earlier
         'PASSWORD': 'Pr0duction$ecure!',     # The password we set
     }
 )
@@ -1344,7 +1344,7 @@ curl -H "Authorization: Bearer <YOUR_ACCESS_TOKEN>" \
   http://localhost:8000/me
 
 # Should return your user claims:
-# {"sub": "xxx", "email": "testuser@natwest.com",
+# {"sub": "xxx", "email": "testuser@example.com",
 #  "groups": ["Finance-Analysts"], "department": "Finance",
 #  "data_tier": "Confidential"}
 ```
@@ -1359,7 +1359,7 @@ curl -X POST http://localhost:8000/chat \
   -d '{"message": "How many orders were placed last month?"}'
 
 # Response (mock in dev):
-# {"response": "[Mock] User testuser@natwest.com asked: How many orders...",
+# {"response": "[Mock] User testuser@example.com asked: How many orders...",
 #  "session_id": "dev-session-001", "sql_generated": null}
 ```
 

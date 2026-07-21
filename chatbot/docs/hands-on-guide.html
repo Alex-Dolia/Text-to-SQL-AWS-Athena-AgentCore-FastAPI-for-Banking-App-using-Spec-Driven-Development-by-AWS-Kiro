@@ -232,17 +232,17 @@ pip install -r requirements.txt</code></pre>
 
 <h3>AWS CLI: Create bucket &amp; upload</h3>
 <pre><code><span class="cm"># Create the data lake bucket (use your own unique name)</span>
-aws s3 mb s3://natwest-datalake-dev-eu-west-2 --region eu-west-2
+aws s3 mb s3://fi-datalake-dev-eu-west-2 --region eu-west-2
 
 <span class="cm"># Upload CSV files (organized by database/table/)</span>
-aws s3 cp data/orders.csv s3://natwest-datalake-dev-eu-west-2/trading/orders/orders.csv
+aws s3 cp data/orders.csv s3://fi-datalake-dev-eu-west-2/trading/orders/orders.csv
 
 <span class="cm"># Upload multiple CSVs at once</span>
-aws s3 sync data/ s3://natwest-datalake-dev-eu-west-2/trading/orders/ \
+aws s3 sync data/ s3://fi-datalake-dev-eu-west-2/trading/orders/ \
   --exclude "*" --include "*.csv"
 
 <span class="cm"># Verify upload</span>
-aws s3 ls s3://natwest-datalake-dev-eu-west-2/trading/orders/</code></pre>
+aws s3 ls s3://fi-datalake-dev-eu-west-2/trading/orders/</code></pre>
 
 <h3>Python (boto3): Upload programmatically</h3>
 <pre><code><span class="cm"># scripts/upload_csv.py</span>
@@ -256,7 +256,7 @@ aws s3 ls s3://natwest-datalake-dev-eu-west-2/trading/orders/</code></pre>
 <span class="cm"># using credentials from 'aws configure' or environment variables</span>
 s3 = boto3.client(<span class="str">'s3'</span>, region_name=<span class="str">'eu-west-2'</span>)
 
-BUCKET = <span class="str">'natwest-datalake-dev-eu-west-2'</span>  <span class="cm"># Target S3 bucket name (must be globally unique)</span>
+BUCKET = <span class="str">'fi-datalake-dev-eu-west-2'</span>  <span class="cm"># Target S3 bucket name (must be globally unique)</span>
 DATA_DIR = Path(<span class="str">'data'</span>)                     <span class="cm"># Local folder containing your CSV files</span>
 
 <span class="cm"># Create the S3 bucket if it doesn't already exist</span>
@@ -337,7 +337,7 @@ print(<span class="str">"Database 'trading' created in Glue Catalog"</span>)</co
 <span class="kw">ROW FORMAT DELIMITED</span>
   <span class="kw">FIELDS TERMINATED BY</span> <span class="str">','</span>
   <span class="kw">LINES TERMINATED BY</span> <span class="str">'\n'</span>
-<span class="kw">LOCATION</span> <span class="str">'s3://natwest-datalake-dev-eu-west-2/trading/orders/'</span>
+<span class="kw">LOCATION</span> <span class="str">'s3://fi-datalake-dev-eu-west-2/trading/orders/'</span>
 <span class="kw">TBLPROPERTIES</span> (
   <span class="str">'skip.header.line.count'</span> = <span class="str">'1'</span>,
   <span class="str">'classification'</span> = <span class="str">'csv'</span>
@@ -367,7 +367,7 @@ print(<span class="str">"Database 'trading' created in Glue Catalog"</span>)</co
   <span class="str">'quoteChar'</span>     = <span class="str">'"'</span>,
   <span class="str">'escapeChar'</span>    = <span class="str">'\\'</span>
 )
-<span class="kw">LOCATION</span> <span class="str">'s3://natwest-datalake-dev-eu-west-2/trading/clients/'</span>
+<span class="kw">LOCATION</span> <span class="str">'s3://fi-datalake-dev-eu-west-2/trading/clients/'</span>
 <span class="kw">TBLPROPERTIES</span> (<span class="str">'skip.header.line.count'</span> = <span class="str">'1'</span>);</code></pre>
 
 <h3>AWS CLI: Run the CREATE TABLE</h3>
@@ -377,7 +377,7 @@ aws athena start-query-execution \
     order_id STRING, customer_id STRING, order_date DATE,
     amount DOUBLE, region STRING, product_category STRING
   ) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-  LOCATION 's3://natwest-datalake-dev-eu-west-2/trading/orders/'
+  LOCATION 's3://fi-datalake-dev-eu-west-2/trading/orders/'
   TBLPROPERTIES ('skip.header.line.count'='1')" \
   --work-group "primary" \
   --region eu-west-2
@@ -391,7 +391,7 @@ aws athena get-query-execution \
 aws athena start-query-execution \
   --query-string "SELECT * FROM trading.orders LIMIT 5" \
   --work-group "primary" \
-  --result-configuration "OutputLocation=s3://natwest-datalake-dev-eu-west-2/query-results/" \
+  --result-configuration "OutputLocation=s3://fi-datalake-dev-eu-west-2/query-results/" \
   --region eu-west-2</code></pre>
 </section>
 
@@ -427,7 +427,7 @@ aws athena start-query-execution \
 <span class="cm"># ─── CONFIGURATION ───────────────────────────────────────────────────</span>
 <span class="cm"># Change these values to match your AWS environment</span>
 REGION = <span class="str">'eu-west-2'</span>                          <span class="cm"># AWS region where your S3 bucket lives</span>
-BUCKET = <span class="str">'natwest-datalake-dev-eu-west-2'</span>      <span class="cm"># S3 bucket containing your CSV files</span>
+BUCKET = <span class="str">'fi-datalake-dev-eu-west-2'</span>      <span class="cm"># S3 bucket containing your CSV files</span>
 DATABASE = <span class="str">'trading'</span>                           <span class="cm"># Glue database name (logical grouping)</span>
 TABLE = <span class="str">'orders'</span>                               <span class="cm"># Table name that will appear in Athena</span>
 WORKGROUP = <span class="str">'primary'</span>                          <span class="cm"># Athena workgroup (controls cost/access)</span>
@@ -703,7 +703,7 @@ aws cognito-idp create-user-pool-client \
 <span class="cm"># Create a domain for the hosted UI</span>
 aws cognito-idp create-user-pool-domain \
   --user-pool-id &lt;YOUR_POOL_ID&gt; \
-  --domain "natwest-chatbot-dev" \
+  --domain "fi-chatbot-dev" \
   --region eu-west-2</code></pre>
 
 <h3>Python (boto3)</h3>
@@ -744,14 +744,14 @@ print(f<span class="str">"✓ App Client created: {client_id}"</span>)
 <span class="cm"># Create domain</span>
 cognito.create_user_pool_domain(
     UserPoolId=user_pool_id,
-    Domain=<span class="str">'natwest-chatbot-dev'</span>
+    Domain=<span class="str">'fi-chatbot-dev'</span>
 )
-print(<span class="str">"✓ Domain created: natwest-chatbot-dev"</span>)
+print(<span class="str">"✓ Domain created: fi-chatbot-dev"</span>)
 
 <span class="cm"># Update config</span>
 config[<span class="str">'client_id'</span>] = client_id
 config[<span class="str">'client_secret'</span>] = client_secret
-config[<span class="str">'domain'</span>] = f<span class="str">'https://natwest-chatbot-dev.auth.{REGION}.amazoncognito.com'</span>
+config[<span class="str">'domain'</span>] = f<span class="str">'https://fi-chatbot-dev.auth.{REGION}.amazoncognito.com'</span>
 <span class="kw">with</span> open(<span class="str">'cognito_config.json'</span>, <span class="str">'w'</span>) <span class="kw">as</span> f:
     json.dump(config, f, indent=<span class="num">2</span>)</code></pre>
 </section>
@@ -812,7 +812,7 @@ print(<span class="str">"✓ SAML IdP 'CorporateIdP' added"</span>)</code></pre>
 <div class="callout-label">What your IdP needs from you</div>
 Give your IdP administrator these values (from the Cognito User Pool):
 <ul>
-<li><strong>ACS URL:</strong> <code>https://natwest-chatbot-dev.auth.eu-west-2.amazoncognito.com/saml2/idpresponse</code></li>
+<li><strong>ACS URL:</strong> <code>https://fi-chatbot-dev.auth.eu-west-2.amazoncognito.com/saml2/idpresponse</code></li>
 <li><strong>Entity ID:</strong> <code>urn:amazon:cognito:sp:&lt;YOUR_POOL_ID&gt;</code></li>
 <li><strong>Attribute statements:</strong> Map department, groups, data tier claims</li>
 </ul>
@@ -824,9 +824,9 @@ Give your IdP administrator these values (from the Cognito User Pool):
 <pre><code><span class="cm"># AWS CLI: Create a user for testing (bypasses IdP for local dev)</span>
 aws cognito-idp admin-create-user \
   --user-pool-id &lt;YOUR_POOL_ID&gt; \
-  --username "testuser@natwest.com" \
+  --username "testuser@example.com" \
   --user-attributes '[
-    {"Name": "email", "Value": "testuser@natwest.com"},
+    {"Name": "email", "Value": "testuser@example.com"},
     {"Name": "email_verified", "Value": "true"},
     {"Name": "custom:department", "Value": "Finance"},
     {"Name": "custom:data_tier", "Value": "Confidential"}
@@ -837,7 +837,7 @@ aws cognito-idp admin-create-user \
 <span class="cm"># Set permanent password (skip force-change flow for testing)</span>
 aws cognito-idp admin-set-user-password \
   --user-pool-id &lt;YOUR_POOL_ID&gt; \
-  --username "testuser@natwest.com" \
+  --username "testuser@example.com" \
   --password "Pr0duction$ecure!" \
   --permanent \
   --region eu-west-2</code></pre>
@@ -865,7 +865,7 @@ response = cognito.admin_initiate_auth(
     ClientId=config[<span class="str">'client_id'</span>],            <span class="cm"># Which app client to use</span>
     AuthFlow=<span class="str">'ADMIN_USER_PASSWORD_AUTH'</span>,      <span class="cm"># Direct password auth (admin-only flow)</span>
     AuthParameters={                          <span class="cm"># Credentials:</span>
-        <span class="str">'USERNAME'</span>: <span class="str">'testuser@natwest.com'</span>,   <span class="cm"># The test user we created earlier</span>
+        <span class="str">'USERNAME'</span>: <span class="str">'testuser@example.com'</span>,   <span class="cm"># The test user we created earlier</span>
         <span class="str">'PASSWORD'</span>: <span class="str">'Pr0duction$ecure!'</span>,     <span class="cm"># The password we set</span>
     }
 )
@@ -1443,7 +1443,7 @@ curl -H "Authorization: Bearer &lt;YOUR_ACCESS_TOKEN&gt;" \
   http://localhost:8000/me
 
 <span class="cm"># Should return your user claims:</span>
-<span class="cm"># {"sub": "xxx", "email": "testuser@natwest.com",</span>
+<span class="cm"># {"sub": "xxx", "email": "testuser@example.com",</span>
 <span class="cm">#  "groups": ["Finance-Analysts"], "department": "Finance",</span>
 <span class="cm">#  "data_tier": "Confidential"}</span></code></pre>
 
@@ -1455,7 +1455,7 @@ curl -X POST http://localhost:8000/chat \
   -d '{"message": "How many orders were placed last month?"}'
 
 <span class="cm"># Response (mock in dev):</span>
-<span class="cm"># {"response": "[Mock] User testuser@natwest.com asked: How many orders...",</span>
+<span class="cm"># {"response": "[Mock] User testuser@example.com asked: How many orders...",</span>
 <span class="cm">#  "session_id": "dev-session-001", "sql_generated": null}</span></code></pre>
 
 <h3>Python test script (alternative to curl)</h3>
