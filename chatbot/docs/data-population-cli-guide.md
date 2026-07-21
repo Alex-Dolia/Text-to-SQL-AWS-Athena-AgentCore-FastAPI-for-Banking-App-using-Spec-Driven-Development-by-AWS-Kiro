@@ -40,6 +40,51 @@ aws s3 ls s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/orders/
 
 > **S3 path convention:** `s3://bucket-name/database-name/table-name/`. Athena reads all files under the LOCATION path — organize one folder per table.
 
+#### Command-by-command explanation
+
+**`aws s3 mb s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2 --region eu-west-2`**
+
+| Input | What it is |
+|-------|-----------|
+| `aws s3 mb` | "make bucket" — creates a new S3 bucket. |
+| `s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2` | The bucket name. S3 bucket names are globally unique across all AWS accounts, so you include your account ID (e.g. `123456789012`) and region to avoid collisions. Replace `<ACCOUNT_ID>` with your actual 12-digit AWS account number. |
+| `--region eu-west-2` | The AWS region where the bucket is physically created. Must match the region your Athena workgroup and Glue Catalog are in. |
+
+**`aws s3 cp data/orders.csv s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/orders/`**
+
+| Input | What it is |
+|-------|-----------|
+| `aws s3 cp` | Copy a file (local → S3, S3 → local, or S3 → S3). |
+| `data/orders.csv` | **Source** — the local file path on your machine, relative to where you run the command. This is your CSV file. |
+| `s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/orders/` | **Destination** — the S3 path. The structure is deliberate: `trading` is the Glue database name, `orders` is the table name. Athena's `LOCATION` will point to this folder and read every file inside it. The trailing `/` means "put the file inside this folder." |
+
+**`aws s3 sync data/ s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/orders/ ^ --exclude "*" --include "*.csv"`**
+
+| Input | What it is |
+|-------|-----------|
+| `aws s3 sync` | Syncs a local directory to S3. Only uploads files that are new or changed (like rsync). |
+| `data/` | **Source directory** — the local folder containing your files. |
+| `s3://.../trading/orders/` | **Destination folder** in S3 (same as above). |
+| `^` | Windows CMD line continuation character (lets you split a long command across multiple lines). On Linux/Mac this would be `\`. |
+| `--exclude "*"` | Start by excluding everything. This filter says "by default, skip all files." |
+| `--include "*.csv"` | Then re-include only files matching `*.csv`. Combined with the exclude, this means: "sync only `.csv` files and ignore everything else (e.g. `.gitignore`, `.DS_Store`, READMEs)." Filters are evaluated in order. |
+
+**`aws s3 ls s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/orders/`**
+
+| Input | What it is |
+|-------|-----------|
+| `aws s3 ls` | List objects in an S3 path (like `dir` or `ls`). |
+| `s3://.../trading/orders/` | The S3 "folder" to list. Shows all files uploaded there — use this to confirm your CSVs arrived. Output looks like: `2025-01-15 10:32:00  1234 orders.csv` |
+
+#### Why the path structure matters
+
+```
+s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/orders/
+     └── bucket name                          └── db  └── table
+```
+
+When you later run `CREATE EXTERNAL TABLE trading.orders ... LOCATION 's3://bucket/trading/orders/'`, Athena reads **all files** in that folder as rows of the table. Each table must have its own subfolder — if you mix CSVs from different tables in the same folder, Athena will try to parse them all with the same schema and produce errors or garbage data.
+
 ### 1.2 Create a Glue Database
 
 ```bash
@@ -50,6 +95,30 @@ aws glue create-database ^
 # Verify
 aws glue get-database --name trading --region eu-west-2
 ```
+
+#### Command-by-command explanation
+
+**`aws glue create-database --database-input "{\"Name\": \"trading\", \"Description\": \"Trading data lake\"}" --region eu-west-2`**
+
+| Input | What it is |
+|-------|-----------|
+| `aws glue create-database` | Creates a new database in the AWS Glue Data Catalog. This is a metadata-only operation — it does not create storage or move data. Think of it like `CREATE SCHEMA` in PostgreSQL. |
+| `--database-input` | A JSON object describing the database to create. Must include at minimum a `Name` field. |
+| `"Name": "trading"` | The database name. This is what you reference in Athena queries (e.g. `SELECT * FROM trading.orders`). Choose a name that represents the data domain. |
+| `"Description": "Trading data lake"` | Optional human-readable description. Appears in the Glue Console and helps others understand what this database contains. |
+| `\"...\"`| The backslash-escaped quotes (`\"`) are required because the JSON is embedded inside a CMD string. On PowerShell you would use single quotes around the JSON instead. |
+| `^` | Windows CMD line continuation character. |
+| `--region eu-west-2` | The AWS region where the Glue Catalog lives. Must match where your Athena workgroup and S3 bucket are. |
+
+**`aws glue get-database --name trading --region eu-west-2`**
+
+| Input | What it is |
+|-------|-----------|
+| `aws glue get-database` | Retrieves metadata about an existing Glue database. Use this to confirm the database was created successfully. |
+| `--name trading` | The name of the database to look up (the same name you used in `create-database`). |
+| `--region eu-west-2` | The region to query. |
+
+The response includes the database name, description, creation time, and the catalog ID (your AWS account number). If you get a `EntityNotFoundException`, the database wasn't created — check your region and permissions.
 
 ### 1.3 Create Table (via Athena DDL)
 
@@ -73,6 +142,43 @@ aws athena get-query-execution ^
 
 Look for `"State": "SUCCEEDED"` in the response.
 
+#### Command-by-command explanation
+
+**`aws athena start-query-execution`**
+
+This submits a SQL statement to Athena for execution. Athena queries are **asynchronous** — the command returns immediately with an execution ID, and the query runs in the background.
+
+| Input | What it is |
+|-------|-----------|
+| `aws athena start-query-execution` | Submits any SQL statement (DDL or DML) to the Athena engine. Returns a `QueryExecutionId` you use to check status and fetch results. |
+| `--query-string "..."` | The SQL statement to execute. In this case it's a `CREATE EXTERNAL TABLE` DDL. The entire SQL is passed as a single string. |
+| `CREATE EXTERNAL TABLE` | Tells Athena to register a table whose data lives externally (in S3). This does **not** copy or move data — it only creates metadata in the Glue Catalog describing how to read the files. |
+| `IF NOT EXISTS` | Skip creation if a table with this name already exists. Prevents errors on re-runs. |
+| `trading.orders` | `trading` is the Glue database name, `orders` is the table name. Dot notation: `database.table`. |
+| `(order_id STRING, customer_id STRING, order_date DATE, amount DOUBLE, region STRING, product_category STRING)` | Column definitions. Each column has a name and a data type. These must match the columns in your CSV (in order). Common types: `STRING` (text), `DATE` (YYYY-MM-DD), `DOUBLE` (decimal number), `INT`/`BIGINT` (integers). |
+| `ROW FORMAT DELIMITED` | Tells Athena the file uses delimited text format (as opposed to Parquet, ORC, JSON, etc.). Uses the LazySimpleSerDe internally. |
+| `FIELDS TERMINATED BY ','` | The column separator is a comma. For TSV files this would be `'\t'`. |
+| `LOCATION 's3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/orders/'` | The S3 **folder** containing data files for this table. Athena reads all files in this path (and subfolders) as rows. Points to a folder, not a specific file. Trailing `/` is required. |
+| `TBLPROPERTIES ('skip.header.line.count'='1')` | Table properties. `skip.header.line.count = 1` tells Athena to skip the first line of each CSV file (the header row with column names) so it's not treated as data. |
+| `--work-group "primary"` | The Athena workgroup to run the query in. Workgroups control cost limits, query result locations, and access. `primary` is the default workgroup. In production, use `chatbot-readonly`. |
+| `--result-configuration "OutputLocation=s3://...query-results/"` | Where Athena writes query execution metadata (a small CSV + metadata file). Required for every query. For DDL statements like CREATE TABLE, the result file is essentially empty but must still have a location. |
+| `--region eu-west-2` | The AWS region where Athena runs. Must match your Glue Catalog and S3 bucket region. |
+| `^` | Windows CMD line continuation character. |
+
+**`aws athena get-query-execution --query-execution-id <QUERY_EXECUTION_ID> --region eu-west-2`**
+
+| Input | What it is |
+|-------|-----------|
+| `aws athena get-query-execution` | Retrieves the status and metadata of a previously submitted query. |
+| `--query-execution-id <QUERY_EXECUTION_ID>` | The ID returned by `start-query-execution`. Replace `<QUERY_EXECUTION_ID>` with the actual value (a UUID like `a1b2c3d4-e5f6-7890-abcd-ef1234567890`). |
+| `--region eu-west-2` | The region where the query was submitted. |
+
+The response includes:
+- `Status.State` — one of `QUEUED`, `RUNNING`, `SUCCEEDED`, `FAILED`, or `CANCELLED`
+- `Status.StateChangeReason` — if FAILED, this explains why (e.g. syntax error, permission issue)
+- `Statistics.DataScannedInBytes` — how much data was read (for cost tracking)
+- `Statistics.EngineExecutionTimeInMillis` — how long the query took
+
 ### 1.4 Notes on CREATE TABLE DDL
 
 **Standard CSV (comma-delimited, header row):**
@@ -93,6 +199,13 @@ LOCATION 's3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/orders/'
 TBLPROPERTIES ('skip.header.line.count' = '1');
 ```
 
+| DDL clause | What it does |
+|------------|-------------|
+| `ROW FORMAT DELIMITED` | Uses the default LazySimpleSerDe — expects simple delimiter-separated values with no quoting or escaping. Fastest for clean CSVs. |
+| `FIELDS TERMINATED BY ','` | Columns are separated by commas. |
+| `LINES TERMINATED BY '\n'` | Each row is one line (newline-separated). This is the default and can be omitted. |
+| `TBLPROPERTIES ('skip.header.line.count' = '1')` | Skip the first line (header). Without this, the header row becomes a data row with string values. |
+
 **CSV with quoted fields (commas inside values):**
 
 ```sql
@@ -112,6 +225,14 @@ LOCATION 's3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/clients/'
 TBLPROPERTIES ('skip.header.line.count' = '1');
 ```
 
+| DDL clause | What it does |
+|------------|-------------|
+| `ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'` | Uses the OpenCSV SerDe instead of the default LazySimpleSerDe. This SerDe handles quoted fields correctly — if a field contains a comma (e.g. an address like `"123 Main St, Suite 4"`), it won't be split into two columns. |
+| `'separatorChar' = ','` | Column delimiter (same as before, but explicitly set). |
+| `'quoteChar' = '"'` | Character used to quote fields containing the separator. Fields wrapped in double quotes are treated as a single value. |
+| `'escapeChar' = '\\\\'` | Character used to escape special characters within a field. The double-backslash `\\\\` is SQL escaping for a single `\`. |
+| **Important caveat** | OpenCSVSerde treats **all columns as STRING** regardless of what types you declare. If you need DATE or DOUBLE types, create a view that casts them: `CREATE VIEW orders_typed AS SELECT CAST(amount AS DOUBLE) ...` |
+
 **Partitioned table (production pattern):**
 
 ```sql
@@ -124,6 +245,12 @@ LOCATION 's3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/orders_partitione
 TBLPROPERTIES ('skip.header.line.count'='1');
 ```
 
+| DDL clause | What it does |
+|------------|-------------|
+| `PARTITIONED BY (order_date DATE, region STRING)` | Declares partition columns. These columns are NOT in the CSV files — their values come from the S3 folder path (Hive-style: `order_date=2025-01-15/region=EMEA/`). Partitions let Athena skip irrelevant folders when your WHERE clause filters on a partition key, dramatically reducing scan costs. |
+| Column list (before `PARTITIONED BY`) | Only includes non-partition columns. Partition columns are defined separately in the `PARTITIONED BY` clause. |
+| **S3 path requirement** | Data must be organized as: `s3://bucket/table/partition_key=value/partition_key=value/file.csv`. Athena uses the folder names to determine partition values. |
+
 After creating a partitioned table, load partitions:
 
 ```bash
@@ -134,6 +261,15 @@ aws athena start-query-execution ^
   --region eu-west-2
 ```
 
+#### Command-by-command explanation (partition repair)
+
+| Input | What it is |
+|-------|-----------|
+| `MSCK REPAIR TABLE trading.orders_partitioned` | Scans the S3 LOCATION for Hive-style partition paths (e.g. `order_date=2025-01-15/region=EMEA/`) and registers them in the Glue Catalog. Without this, Athena doesn't know the partitions exist. Run this after uploading new partitioned data. |
+| `--work-group "primary"` | Workgroup to execute in. |
+| `--result-configuration "OutputLocation=..."` | S3 path for Athena output metadata. |
+| `--region eu-west-2` | AWS region. |
+
 S3 structure for partitioned data must follow Hive-style paths:
 `s3://bucket/trading/orders_partitioned/order_date=2025-01-15/region=EMEA/file.csv`
 
@@ -142,6 +278,17 @@ S3 structure for partitioned data must follow Hive-style paths:
 ```bash
 aws glue get-table --database-name trading --name orders --region eu-west-2
 ```
+
+#### Command-by-command explanation
+
+| Input | What it is |
+|-------|-----------|
+| `aws glue get-table` | Retrieves full metadata for a specific table from the Glue Data Catalog — column definitions, SerDe, S3 location, partition keys, and table properties. |
+| `--database-name trading` | The Glue database containing the table. |
+| `--name orders` | The table name to look up. |
+| `--region eu-west-2` | AWS region where the Glue Catalog lives. |
+
+The response confirms: column names/types match your CSV, the LOCATION points to the correct S3 path, and SerDe parameters (delimiter, header skip) are set correctly. If you get `EntityNotFoundException`, the CREATE TABLE DDL didn't succeed — re-check section 1.3.
 
 ---
 
@@ -162,6 +309,15 @@ Set it as a variable for convenience:
 ```bash
 set USER_POOL_ID=eu-west-2_XXXXXXXXX
 ```
+
+#### Command-by-command explanation
+
+| Input | What it is |
+|-------|-----------|
+| `aws cognito-idp list-user-pools` | Lists all Cognito User Pools in the account/region. Returns pool IDs and names. |
+| `--max-results 10` | Limit output to 10 pools (pagination control). |
+| `--region eu-west-2` | AWS region to query. |
+| `set USER_POOL_ID=eu-west-2_XXXXXXXXX` | Windows CMD variable assignment. Stores the pool ID so subsequent commands can use `%USER_POOL_ID%` instead of repeating the full ID. Replace `eu-west-2_XXXXXXXXX` with the actual pool ID from the list response (format: `<region>_<alphanumeric>`). |
 
 ### 2.2 Create Groups
 
@@ -193,6 +349,28 @@ aws cognito-idp create-group ^
 aws cognito-idp list-groups --user-pool-id %USER_POOL_ID% --region eu-west-2
 ```
 
+#### Command-by-command explanation
+
+**`aws cognito-idp create-group`**
+
+| Input | What it is |
+|-------|-----------|
+| `aws cognito-idp create-group` | Creates a new group in the specified Cognito User Pool. Groups appear as the `cognito:groups` claim in JWTs — Cedar policies evaluate this claim for authorization decisions. |
+| `--user-pool-id %USER_POOL_ID%` | The User Pool to create the group in. `%USER_POOL_ID%` references the CMD variable set in section 2.1. |
+| `--group-name "Finance-Analysts"` | The group name. This exact string appears in the JWT `cognito:groups` array and must match what your Cedar policies check (e.g. `principal.groups.contains("Finance-Analysts")`). Case-sensitive. |
+| `--description "..."` | Human-readable description. Visible in the Cognito Console. Does not affect authorization logic. |
+| `--region eu-west-2` | AWS region where the User Pool lives. |
+
+**`aws cognito-idp list-groups`**
+
+| Input | What it is |
+|-------|-----------|
+| `aws cognito-idp list-groups` | Lists all groups in a User Pool. Use to verify your groups were created. |
+| `--user-pool-id %USER_POOL_ID%` | The User Pool to query. |
+| `--region eu-west-2` | AWS region. |
+
+The response shows each group's name, description, creation date, and last-modified date.
+
 ### 2.3 Create a User
 
 ```bash
@@ -215,6 +393,35 @@ aws cognito-idp admin-set-user-password ^
   --region eu-west-2
 ```
 
+#### Command-by-command explanation
+
+**`aws cognito-idp admin-create-user`**
+
+| Input | What it is |
+|-------|-----------|
+| `aws cognito-idp admin-create-user` | Creates a new user in the pool as an administrator (bypasses self-signup). The user is created in `FORCE_CHANGE_PASSWORD` status by default. |
+| `--user-pool-id %USER_POOL_ID%` | The User Pool to add the user to. |
+| `--username "analyst@example.com"` | The login identifier for the user. Typically an email address. Must be unique within the pool. |
+| `--user-attributes [...]` | A JSON array of `{Name, Value}` objects setting the user's profile attributes. Each attribute explained below: |
+| `"Name":"email", "Value":"analyst@example.com"` | The user's email address. Used for notifications and account recovery. |
+| `"Name":"email_verified", "Value":"true"` | Marks the email as pre-verified. Without this, Cognito sends a verification email and the user cannot log in until they confirm. Set to `"true"` for test users. |
+| `"Name":"custom:department", "Value":"Finance"` | Custom attribute — the user's business department. Appears in the JWT as `custom:department` and is used by Cedar policies for ABAC authorization. |
+| `"Name":"custom:role", "Value":"analyst"` | Custom attribute — the user's role (e.g. `analyst`, `manager`). Cedar policies check `principal.role` against this value. |
+| `"Name":"custom:data_classification_tier", "Value":"confidential"` | Custom attribute — the maximum data classification tier this user can access. Valid values: `public`, `internal`, `confidential`, `restricted`. Cedar policies use this for tier-based access control. |
+| `--temporary-password "TempP@ssw0rd!"` | Initial password assigned to the user. Must meet the pool's password policy (16+ chars, upper, lower, number, symbol). User is forced to change it on first login unless you set a permanent password. |
+| `--region eu-west-2` | AWS region. |
+
+**`aws cognito-idp admin-set-user-password`**
+
+| Input | What it is |
+|-------|-----------|
+| `aws cognito-idp admin-set-user-password` | Directly sets a user's password without requiring them to go through the change-password flow. |
+| `--user-pool-id %USER_POOL_ID%` | The User Pool containing the user. |
+| `--username "analyst@example.com"` | Which user to update. |
+| `--password "Pr0duction$ecure!2026"` | The new password. Must meet the pool's password policy. |
+| `--permanent` | Sets the password as permanent (moves user from `FORCE_CHANGE_PASSWORD` to `CONFIRMED` status). Without this flag, the password would still be treated as temporary. |
+| `--region eu-west-2` | AWS region. |
+
 ### 2.4 Add User to a Group
 
 ```bash
@@ -224,6 +431,18 @@ aws cognito-idp admin-add-user-to-group ^
   --group-name "Finance-Analysts" ^
   --region eu-west-2
 ```
+
+#### Command-by-command explanation
+
+| Input | What it is |
+|-------|-----------|
+| `aws cognito-idp admin-add-user-to-group` | Adds an existing user to an existing group. After this, the group name appears in the user's JWT `cognito:groups` claim on their next login. |
+| `--user-pool-id %USER_POOL_ID%` | The User Pool that contains both the user and the group. |
+| `--username "analyst@example.com"` | The user to add (must already exist in the pool). |
+| `--group-name "Finance-Analysts"` | The group to add the user to (must already exist — create it first with `create-group`). Case-sensitive — must exactly match what Cedar policies expect. |
+| `--region eu-west-2` | AWS region. |
+
+A user can belong to multiple groups. Each group membership grants additional Cedar policy permissions. The user's JWT will contain all groups in the `cognito:groups` array.
 
 ### 2.5 Verify User and Group Membership
 
@@ -240,6 +459,30 @@ aws cognito-idp admin-list-groups-for-user ^
   --username "analyst@example.com" ^
   --region eu-west-2
 ```
+
+#### Command-by-command explanation
+
+**`aws cognito-idp admin-get-user`**
+
+| Input | What it is |
+|-------|-----------|
+| `aws cognito-idp admin-get-user` | Retrieves full profile details for a specific user — all attributes, account status, creation date, MFA settings. |
+| `--user-pool-id %USER_POOL_ID%` | The User Pool to query. |
+| `--username "analyst@example.com"` | The user to look up. |
+| `--region eu-west-2` | AWS region. |
+
+The response includes `UserAttributes` (email, custom:department, custom:role, etc.), `UserStatus` (`CONFIRMED`, `FORCE_CHANGE_PASSWORD`, or `DISABLED`), and `Enabled` (true/false).
+
+**`aws cognito-idp admin-list-groups-for-user`**
+
+| Input | What it is |
+|-------|-----------|
+| `aws cognito-idp admin-list-groups-for-user` | Lists all groups a specific user belongs to. Use this to verify group assignments before testing authorization. |
+| `--user-pool-id %USER_POOL_ID%` | The User Pool to query. |
+| `--username "analyst@example.com"` | The user whose group memberships to list. |
+| `--region eu-west-2` | AWS region. |
+
+The response is an array of group objects. Verify the user's groups match what your Cedar policies require for the access you want to test.
 
 ### 2.6 Example: Create Multiple Users (Batch)
 
@@ -271,6 +514,19 @@ aws cognito-idp admin-add-user-to-group ^
   --group-name "cross_department_access" ^
   --region eu-west-2
 ```
+
+#### Explanation of this sequence
+
+This creates a **manager** user with broader access than an analyst:
+
+| Step | What it does | Authorization effect |
+|------|-------------|---------------------|
+| `admin-create-user` with `custom:role = "manager"` and `custom:data_classification_tier = "restricted"` | Creates the user with manager role and highest-tier clearance. | Cedar `managers.cedar` policies match on `principal.role == "manager"`. Tier `restricted` means this user can access all data up to and including restricted. |
+| `admin-set-user-password --permanent` | Sets a usable password so the user can log in immediately. | N/A — operational convenience for testing. |
+| `admin-add-user-to-group "Finance-Analysts"` | Adds to the Finance-Analysts group. | User gets access to finance and sales databases via group-based permits. |
+| `admin-add-user-to-group "cross_department_access"` | Adds to the cross-department group. | Cedar `managers.cedar` has additional permits for managers in this group — allows querying tables across all departments (not just their own), still bounded by classification tier. |
+
+The resulting JWT for this user will contain `"cognito:groups": ["Finance-Analysts", "cross_department_access"]` and `"custom:role": "manager"` — both are evaluated by Cedar on every tool call.
 
 ---
 
@@ -322,6 +578,15 @@ aws athena start-query-execution ^
 
 This returns a JSON response with `QueryExecutionId`.
 
+| Input | What it is |
+|-------|-----------|
+| `aws athena start-query-execution` | Submits a SQL query to Athena. Returns immediately with a `QueryExecutionId` — the query runs asynchronously in the background. |
+| `--query-string "SELECT * FROM trading.orders LIMIT 5"` | The SQL to execute. This is a read query (SELECT) that retrieves the first 5 rows from the `orders` table in the `trading` database. |
+| `--query-execution-context "Database=trading"` | Sets the default database context. If your SQL uses unqualified table names (e.g. `orders` instead of `trading.orders`), Athena looks in this database. |
+| `--work-group "primary"` | The Athena workgroup. Controls cost limits (bytes-scanned cap), result location defaults, and IAM access. Use `primary` for general testing or `chatbot-readonly` for production-like behavior. |
+| `--result-configuration "OutputLocation=s3://..."` | S3 path where Athena writes the query result CSV. Every query produces a result file here — even if you only read results via the API. |
+| `--region eu-west-2` | AWS region. |
+
 **Step 2 — Check query status (poll until SUCCEEDED):**
 
 ```bash
@@ -332,6 +597,14 @@ aws athena get-query-execution ^
 
 Look for `"State": "SUCCEEDED"` (or `FAILED` / `CANCELLED`).
 
+| Input | What it is |
+|-------|-----------|
+| `aws athena get-query-execution` | Retrieves the current status of a submitted query. |
+| `--query-execution-id <QUERY_EXECUTION_ID>` | The UUID returned by step 1. Replace `<QUERY_EXECUTION_ID>` with the actual value. |
+| `--region eu-west-2` | AWS region. |
+
+Poll this command (re-run every 1–2 seconds) until `Status.State` is `SUCCEEDED`, `FAILED`, or `CANCELLED`. In-progress queries show `QUEUED` or `RUNNING`.
+
 **Step 3 — Fetch results:**
 
 ```bash
@@ -341,6 +614,17 @@ aws athena get-query-results ^
 ```
 
 This returns the rows as JSON. The first row in `ResultSet.Rows` is the header, subsequent rows are data.
+
+| Input | What it is |
+|-------|-----------|
+| `aws athena get-query-results` | Fetches the actual data rows returned by a completed query. Only works after `Status.State` is `SUCCEEDED`. |
+| `--query-execution-id <QUERY_EXECUTION_ID>` | Same execution ID from step 1. |
+| `--region eu-west-2` | AWS region. |
+
+The response contains:
+- `ResultSet.ResultSetMetadata.ColumnInfo` — column names and types
+- `ResultSet.Rows[0]` — the header row (column names as strings)
+- `ResultSet.Rows[1:]` — actual data rows, each as a list of `{VarCharValue: "..."}` cells
 
 ### 3.3 Example Verification Queries
 
@@ -384,6 +668,19 @@ aws s3 ls s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/query-results/ --region e
 ```
 
 Each query produces two files: `<execution-id>.csv` (results) and `<execution-id>.csv.metadata` (schema info).
+
+#### Command-by-command explanation
+
+| Input | What it is |
+|-------|-----------|
+| `aws s3 ls` | Lists objects at the given S3 path. |
+| `s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/query-results/` | The folder you configured as the Athena `OutputLocation`. Every query you run produces files here. |
+| `--region eu-west-2` | AWS region (optional for `s3 ls` but good practice). |
+
+The output shows filenames like `a1b2c3d4-e5f6-7890-abcd-ef1234567890.csv`. You can download and inspect a result file with:
+```bash
+aws s3 cp s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/query-results/<execution-id>.csv ./result.csv
+```
 
 ---
 
