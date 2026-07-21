@@ -2,15 +2,67 @@
 
 How to populate the Athena Chatbot data layer using the AWS CLI. Covers uploading CSV data to S3, creating Athena tables via the Glue Catalog, provisioning Cognito users and groups, and manually verifying queries.
 
+## Table of Contents
+
+- [Prerequisites](#prerequisites)
+- [1. Create Athena Tables from CSV Files](#1-create-athena-tables-from-csv-files)
+  - [1.1 Upload CSV to S3](#11-upload-csv-to-s3)
+  - [1.2 Create a Glue Database](#12-create-a-glue-database)
+  - [1.3 Create Table (via Athena DDL)](#13-create-table-via-athena-ddl)
+  - [1.4 Notes on CREATE TABLE DDL](#14-notes-on-create-table-ddl)
+  - [1.5 Verify the Table Exists](#15-verify-the-table-exists)
+- [2. Create Users and Groups in Cognito](#2-create-users-and-groups-in-cognito)
+  - [2.1 Identify Your User Pool ID](#21-identify-your-user-pool-id)
+  - [2.2 Create Groups](#22-create-groups)
+  - [2.3 Create a User](#23-create-a-user)
+  - [2.4 Add User to a Group](#24-add-user-to-a-group)
+  - [2.5 Verify User and Group Membership](#25-verify-user-and-group-membership)
+  - [2.6 Example: Create Multiple Users (Batch)](#26-example-create-multiple-users-batch)
+- [3. Manually Verify Athena Queries](#3-manually-verify-athena-queries)
+  - [3.1 Using the AWS Console (Athena Query Editor)](#31-using-the-aws-console-athena-query-editor)
+  - [3.2 Using the AWS CLI](#32-using-the-aws-cli)
+  - [3.3 Example Verification Queries](#33-example-verification-queries)
+  - [3.4 Common Errors and Fixes](#34-common-errors-and-fixes)
+  - [3.5 Checking Query Results in S3](#35-checking-query-results-in-s3)
+- [4. Clean Up Resources](#4-clean-up-resources)
+- [Quick Reference](#quick-reference)
+- [Further Reading](#further-reading)
+
+---
+
 ## Prerequisites
 
 | Tool | Install | Verify |
 |------|---------|--------|
-| AWS CLI v2 | `msiexec /i https://awscli.amazonaws.com/AWSCLIV2.msi` | `aws --version` |
-| Configured credentials | `aws configure` (Access Key, Secret Key, region `eu-west-2`) | `aws sts get-caller-identity` |
+| AWS CLI v2 | `msiexec /i https://awscli.amazonaws.com/AWSCLIV2.msi` ([Install guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)) | `aws --version` |
+| Configured credentials | `aws configure` (Access Key, Secret Key, region `eu-west-2`) ([Configuration guide](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html)) | `aws sts get-caller-identity` |
 | S3 bucket for data | Created manually or via CDK | `aws s3 ls` |
 
-Ensure your IAM user/role has permissions for S3, Glue, Athena, and Cognito.
+### Required IAM Permissions
+
+Your IAM user or role needs these AWS managed policies (or equivalent custom policies):
+
+| Service | Managed Policy | What it allows |
+|---------|---------------|----------------|
+| S3 | `AmazonS3FullAccess` | Create buckets, upload/list/download objects |
+| Glue | `AWSGlueConsoleFullAccess` | Create/read databases and tables in the Data Catalog |
+| Athena | `AmazonAthenaFullAccess` | Submit queries, read results, manage workgroups |
+| Cognito | `AmazonCognitoPowerUser` | Create/manage user pools, users, and groups |
+
+> **Least privilege:** In production, create custom policies scoped to specific resources. The managed policies above are broad and suitable only for development/testing. See [IAM best practices](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html).
+
+### Sample CSV Data
+
+This guide uses the following sample CSV. Save it as `data/orders.csv`:
+
+```csv
+order_id,customer_id,order_date,amount,region,product_category
+1001,C-2341,2025-01-15,1250.00,EMEA,Fixed Income
+1002,C-1892,2025-01-16,3400.50,APAC,Equities
+1003,C-0045,2025-01-16,890.25,EMEA,Derivatives
+1004,C-2341,2025-01-17,5600.00,AMER,Fixed Income
+1005,C-1100,2025-01-18,2100.75,EMEA,Equities
+```
 
 ---
 
@@ -20,6 +72,8 @@ Athena reads data directly from S3 — you do not load data *into* Athena. Inste
 1. Upload CSV files to S3
 2. Create a Glue database (metadata container)
 3. Create an external table pointing to the S3 location
+
+> **How it works:** Athena is a serverless query engine that reads data in-place from S3. The Glue Data Catalog stores table metadata (column names, types, S3 location, file format). When you query a table, Athena uses the catalog metadata to parse files directly from S3. See [Amazon Athena concepts](https://docs.aws.amazon.com/athena/latest/ug/what-is.html) and [AWS Glue Data Catalog](https://docs.aws.amazon.com/glue/latest/dg/catalog-and-crawler.html).
 
 ### 1.1 Upload CSV to S3
 
@@ -38,7 +92,7 @@ aws s3 sync data/ s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/orders/ ^
 aws s3 ls s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/orders/
 ```
 
-> **S3 path convention:** `s3://bucket-name/database-name/table-name/`. Athena reads all files under the LOCATION path — organize one folder per table.
+> **S3 path convention:** `s3://bucket-name/database-name/table-name/`. Athena reads all files under the LOCATION path — organize one folder per table. See [S3 CLI reference](https://docs.aws.amazon.com/cli/latest/reference/s3/index.html).
 
 #### Command-by-command explanation
 
@@ -102,7 +156,7 @@ aws glue get-database --name trading --region eu-west-2
 
 | Input | What it is |
 |-------|-----------|
-| `aws glue create-database` | Creates a new database in the AWS Glue Data Catalog. This is a metadata-only operation — it does not create storage or move data. Think of it like `CREATE SCHEMA` in PostgreSQL. |
+| `aws glue create-database` | Creates a new database in the AWS Glue Data Catalog. This is a metadata-only operation — it does not create storage or move data. Think of it like `CREATE SCHEMA` in PostgreSQL. See [create-database CLI reference](https://docs.aws.amazon.com/cli/latest/reference/glue/create-database.html). |
 | `--database-input` | A JSON object describing the database to create. Must include at minimum a `Name` field. |
 | `"Name": "trading"` | The database name. This is what you reference in Athena queries (e.g. `SELECT * FROM trading.orders`). Choose a name that represents the data domain. |
 | `"Description": "Trading data lake"` | Optional human-readable description. Appears in the Glue Console and helps others understand what this database contains. |
@@ -119,6 +173,18 @@ aws glue get-database --name trading --region eu-west-2
 | `--region eu-west-2` | The region to query. |
 
 The response includes the database name, description, creation time, and the catalog ID (your AWS account number). If you get a `EntityNotFoundException`, the database wasn't created — check your region and permissions.
+
+**Expected output (success):**
+```json
+{
+    "Database": {
+        "Name": "trading",
+        "Description": "Trading data lake",
+        "CreateTime": "2025-01-15T10:30:00+00:00",
+        "CatalogId": "123456789012"
+    }
+}
+```
 
 ### 1.3 Create Table (via Athena DDL)
 
@@ -150,13 +216,13 @@ This submits a SQL statement to Athena for execution. Athena queries are **async
 
 | Input | What it is |
 |-------|-----------|
-| `aws athena start-query-execution` | Submits any SQL statement (DDL or DML) to the Athena engine. Returns a `QueryExecutionId` you use to check status and fetch results. |
+| `aws athena start-query-execution` | Submits any SQL statement (DDL or DML) to the Athena engine. Returns a `QueryExecutionId` you use to check status and fetch results. See [start-query-execution CLI reference](https://docs.aws.amazon.com/cli/latest/reference/athena/start-query-execution.html). |
 | `--query-string "..."` | The SQL statement to execute. In this case it's a `CREATE EXTERNAL TABLE` DDL. The entire SQL is passed as a single string. |
 | `CREATE EXTERNAL TABLE` | Tells Athena to register a table whose data lives externally (in S3). This does **not** copy or move data — it only creates metadata in the Glue Catalog describing how to read the files. |
 | `IF NOT EXISTS` | Skip creation if a table with this name already exists. Prevents errors on re-runs. |
 | `trading.orders` | `trading` is the Glue database name, `orders` is the table name. Dot notation: `database.table`. |
 | `(order_id STRING, customer_id STRING, order_date DATE, amount DOUBLE, region STRING, product_category STRING)` | Column definitions. Each column has a name and a data type. These must match the columns in your CSV (in order). Common types: `STRING` (text), `DATE` (YYYY-MM-DD), `DOUBLE` (decimal number), `INT`/`BIGINT` (integers). |
-| `ROW FORMAT DELIMITED` | Tells Athena the file uses delimited text format (as opposed to Parquet, ORC, JSON, etc.). Uses the LazySimpleSerDe internally. |
+| `ROW FORMAT DELIMITED` | Tells Athena the file uses delimited text format (as opposed to Parquet, ORC, JSON, etc.). Uses the [LazySimpleSerDe](https://docs.aws.amazon.com/athena/latest/ug/lazy-simple-serde.html) internally. |
 | `FIELDS TERMINATED BY ','` | The column separator is a comma. For TSV files this would be `'\t'`. |
 | `LOCATION 's3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/orders/'` | The S3 **folder** containing data files for this table. Athena reads all files in this path (and subfolders) as rows. Points to a folder, not a specific file. Trailing `/` is required. |
 | `TBLPROPERTIES ('skip.header.line.count'='1')` | Table properties. `skip.header.line.count = 1` tells Athena to skip the first line of each CSV file (the header row with column names) so it's not treated as data. |
@@ -178,6 +244,33 @@ The response includes:
 - `Status.StateChangeReason` — if FAILED, this explains why (e.g. syntax error, permission issue)
 - `Statistics.DataScannedInBytes` — how much data was read (for cost tracking)
 - `Statistics.EngineExecutionTimeInMillis` — how long the query took
+
+**Expected output from `start-query-execution`:**
+```json
+{
+    "QueryExecutionId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+}
+```
+
+**Expected output from `get-query-execution` (success):**
+```json
+{
+    "QueryExecution": {
+        "QueryExecutionId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "Query": "CREATE EXTERNAL TABLE ...",
+        "Status": {
+            "State": "SUCCEEDED",
+            "SubmissionDateTime": "2025-01-15T10:32:00+00:00",
+            "CompletionDateTime": "2025-01-15T10:32:02+00:00"
+        },
+        "Statistics": {
+            "EngineExecutionTimeInMillis": 1200,
+            "DataScannedInBytes": 0
+        },
+        "WorkGroup": "primary"
+    }
+}
+```
 
 ### 1.4 Notes on CREATE TABLE DDL
 
@@ -201,7 +294,7 @@ TBLPROPERTIES ('skip.header.line.count' = '1');
 
 | DDL clause | What it does |
 |------------|-------------|
-| `ROW FORMAT DELIMITED` | Uses the default LazySimpleSerDe — expects simple delimiter-separated values with no quoting or escaping. Fastest for clean CSVs. |
+| `ROW FORMAT DELIMITED` | Uses the default [LazySimpleSerDe](https://docs.aws.amazon.com/athena/latest/ug/lazy-simple-serde.html) — expects simple delimiter-separated values with no quoting or escaping. Fastest for clean CSVs. |
 | `FIELDS TERMINATED BY ','` | Columns are separated by commas. |
 | `LINES TERMINATED BY '\n'` | Each row is one line (newline-separated). This is the default and can be omitted. |
 | `TBLPROPERTIES ('skip.header.line.count' = '1')` | Skip the first line (header). Without this, the header row becomes a data row with string values. |
@@ -227,7 +320,7 @@ TBLPROPERTIES ('skip.header.line.count' = '1');
 
 | DDL clause | What it does |
 |------------|-------------|
-| `ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'` | Uses the OpenCSV SerDe instead of the default LazySimpleSerDe. This SerDe handles quoted fields correctly — if a field contains a comma (e.g. an address like `"123 Main St, Suite 4"`), it won't be split into two columns. |
+| `ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'` | Uses the [OpenCSV SerDe](https://docs.aws.amazon.com/athena/latest/ug/csv-serde.html) instead of the default LazySimpleSerDe. This SerDe handles quoted fields correctly — if a field contains a comma (e.g. an address like `"123 Main St, Suite 4"`), it won't be split into two columns. |
 | `'separatorChar' = ','` | Column delimiter (same as before, but explicitly set). |
 | `'quoteChar' = '"'` | Character used to quote fields containing the separator. Fields wrapped in double quotes are treated as a single value. |
 | `'escapeChar' = '\\\\'` | Character used to escape special characters within a field. The double-backslash `\\\\` is SQL escaping for a single `\`. |
@@ -247,7 +340,7 @@ TBLPROPERTIES ('skip.header.line.count'='1');
 
 | DDL clause | What it does |
 |------------|-------------|
-| `PARTITIONED BY (order_date DATE, region STRING)` | Declares partition columns. These columns are NOT in the CSV files — their values come from the S3 folder path (Hive-style: `order_date=2025-01-15/region=EMEA/`). Partitions let Athena skip irrelevant folders when your WHERE clause filters on a partition key, dramatically reducing scan costs. |
+| `PARTITIONED BY (order_date DATE, region STRING)` | Declares partition columns. These columns are NOT in the CSV files — their values come from the S3 folder path (Hive-style: `order_date=2025-01-15/region=EMEA/`). Partitions let Athena skip irrelevant folders when your WHERE clause filters on a partition key, dramatically reducing scan costs. See [Partitioning data in Athena](https://docs.aws.amazon.com/athena/latest/ug/partitions.html). |
 | Column list (before `PARTITIONED BY`) | Only includes non-partition columns. Partition columns are defined separately in the `PARTITIONED BY` clause. |
 | **S3 path requirement** | Data must be organized as: `s3://bucket/table/partition_key=value/partition_key=value/file.csv`. Athena uses the folder names to determine partition values. |
 
@@ -294,7 +387,7 @@ The response confirms: column names/types match your CSV, the LOCATION points to
 
 ## 2. Create Users and Groups in Cognito
 
-The chatbot uses Amazon Cognito as its identity layer. In production, users authenticate via corporate SAML SSO. For development and testing, you can create users and groups directly.
+The chatbot uses [Amazon Cognito](https://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html) as its identity layer. In production, users authenticate via corporate SAML SSO. For development and testing, you can create users and groups directly using the [cognito-idp CLI](https://docs.aws.amazon.com/cli/latest/reference/cognito-idp/index.html).
 
 ### 2.1 Identify Your User Pool ID
 
@@ -355,7 +448,7 @@ aws cognito-idp list-groups --user-pool-id %USER_POOL_ID% --region eu-west-2
 
 | Input | What it is |
 |-------|-----------|
-| `aws cognito-idp create-group` | Creates a new group in the specified Cognito User Pool. Groups appear as the `cognito:groups` claim in JWTs — Cedar policies evaluate this claim for authorization decisions. |
+| `aws cognito-idp create-group` | Creates a new group in the specified Cognito User Pool. Groups appear as the `cognito:groups` claim in JWTs — Cedar policies evaluate this claim for authorization decisions. See [create-group CLI reference](https://docs.aws.amazon.com/cli/latest/reference/cognito-idp/create-group.html). |
 | `--user-pool-id %USER_POOL_ID%` | The User Pool to create the group in. `%USER_POOL_ID%` references the CMD variable set in section 2.1. |
 | `--group-name "Finance-Analysts"` | The group name. This exact string appears in the JWT `cognito:groups` array and must match what your Cedar policies check (e.g. `principal.groups.contains("Finance-Analysts")`). Case-sensitive. |
 | `--description "..."` | Human-readable description. Visible in the Cognito Console. Does not affect authorization logic. |
@@ -399,7 +492,7 @@ aws cognito-idp admin-set-user-password ^
 
 | Input | What it is |
 |-------|-----------|
-| `aws cognito-idp admin-create-user` | Creates a new user in the pool as an administrator (bypasses self-signup). The user is created in `FORCE_CHANGE_PASSWORD` status by default. |
+| `aws cognito-idp admin-create-user` | Creates a new user in the pool as an administrator (bypasses self-signup). The user is created in `FORCE_CHANGE_PASSWORD` status by default. See [admin-create-user CLI reference](https://docs.aws.amazon.com/cli/latest/reference/cognito-idp/admin-create-user.html). |
 | `--user-pool-id %USER_POOL_ID%` | The User Pool to add the user to. |
 | `--username "analyst@example.com"` | The login identifier for the user. Typically an email address. Must be unique within the pool. |
 | `--user-attributes [...]` | A JSON array of `{Name, Value}` objects setting the user's profile attributes. Each attribute explained below: |
@@ -536,9 +629,9 @@ Once your table is created and CSV data is in S3, you can verify everything work
 
 ### 3.1 Using the AWS Console (Athena Query Editor)
 
-This is the easiest way to interactively write and test SQL queries.
+This is the easiest way to interactively write and test SQL queries. The Athena Query Editor is a browser-based SQL IDE built into the [AWS Management Console](https://docs.aws.amazon.com/athena/latest/ug/getting-started.html).
 
-1. Open the AWS Console: https://console.aws.amazon.com/athena
+1. Open the AWS Console: [https://console.aws.amazon.com/athena](https://console.aws.amazon.com/athena)
 2. Make sure you are in the correct region (e.g. `eu-west-2`).
 3. In the left panel, select your **Database** (e.g. `trading`) from the dropdown.
 4. In the **Query Editor** (the large text area in the center of the page), type your SQL query:
@@ -684,6 +777,44 @@ aws s3 cp s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/query-results/<execution-
 
 ---
 
+## 4. Clean Up Resources
+
+To avoid ongoing costs, remove resources created during testing:
+
+```bash
+# Delete the Athena table (metadata only — does not delete S3 data)
+aws athena start-query-execution ^
+  --query-string "DROP TABLE IF EXISTS trading.orders" ^
+  --work-group "primary" ^
+  --result-configuration "OutputLocation=s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/query-results/" ^
+  --region eu-west-2
+
+# Delete the Glue database (fails if tables still exist — drop tables first)
+aws glue delete-database --name trading --region eu-west-2
+
+# Delete S3 data (irreversible!)
+aws s3 rm s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/trading/orders/ --recursive --region eu-west-2
+
+# Delete the S3 bucket (must be empty first)
+aws s3 rb s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2 --region eu-west-2
+
+# Delete a Cognito user
+aws cognito-idp admin-delete-user ^
+  --user-pool-id %USER_POOL_ID% ^
+  --username "analyst@example.com" ^
+  --region eu-west-2
+
+# Delete a Cognito group
+aws cognito-idp delete-group ^
+  --user-pool-id %USER_POOL_ID% ^
+  --group-name "Finance-Analysts" ^
+  --region eu-west-2
+```
+
+> **Warning:** `aws s3 rm --recursive` permanently deletes files. Double-check the path before running.
+
+---
+
 ## Quick Reference
 
 | Task | Command |
@@ -697,3 +828,26 @@ aws s3 cp s3://chatbot-datalake-<ACCOUNT_ID>-eu-west-2/query-results/<execution-
 | Create Cognito user | `aws cognito-idp admin-create-user --user-pool-id <ID> --username <EMAIL> --user-attributes [...]` |
 | Add user to group | `aws cognito-idp admin-add-user-to-group --user-pool-id <ID> --username <EMAIL> --group-name <NAME>` |
 | Run interactive SQL | AWS Console → Athena → Query Editor → type SQL → click Run |
+
+---
+
+## Further Reading
+
+| Topic | Link |
+|-------|------|
+| Amazon Athena User Guide | https://docs.aws.amazon.com/athena/latest/ug/what-is.html |
+| CREATE TABLE statement (Athena DDL) | https://docs.aws.amazon.com/athena/latest/ug/create-table.html |
+| Supported data formats in Athena | https://docs.aws.amazon.com/athena/latest/ug/supported-serdes.html |
+| LazySimpleSerDe (default CSV) | https://docs.aws.amazon.com/athena/latest/ug/lazy-simple-serde.html |
+| OpenCSVSerDe (quoted CSV) | https://docs.aws.amazon.com/athena/latest/ug/csv-serde.html |
+| Partitioning data in Athena | https://docs.aws.amazon.com/athena/latest/ug/partitions.html |
+| Athena workgroups | https://docs.aws.amazon.com/athena/latest/ug/workgroups.html |
+| AWS Glue Data Catalog | https://docs.aws.amazon.com/glue/latest/dg/catalog-and-crawler.html |
+| Glue CLI reference | https://docs.aws.amazon.com/cli/latest/reference/glue/index.html |
+| Amazon Cognito Developer Guide | https://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html |
+| Cognito User Pool groups | https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-user-groups.html |
+| Cognito CLI reference (cognito-idp) | https://docs.aws.amazon.com/cli/latest/reference/cognito-idp/index.html |
+| AWS CLI S3 commands | https://docs.aws.amazon.com/cli/latest/reference/s3/index.html |
+| Athena CLI reference | https://docs.aws.amazon.com/cli/latest/reference/athena/index.html |
+| IAM best practices | https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html |
+| Cedar policy language | https://www.cedarpolicy.com/en |
